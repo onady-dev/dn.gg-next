@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Game, Group, InGamePlayer } from '@/types/game';
+import { Game, Group, InGamePlayer, Log } from '@/types/game';
 import { api } from '@/lib/axios';
+
+interface LogSummary {
+  name: string;
+  count: number;
+  value: number;
+  logitemId: number;
+}
 
 export default function Home() {
   const [games, setGames] = useState<Game[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<number>(1);
@@ -15,7 +22,7 @@ export default function Home() {
     const fetchGroups = async () => {
       try {
         const response = await api.get('/group');
-        setGroups(response.data);
+        setGroup(response.data);
       } catch (err) {
         console.error('그룹 목록을 불러오는데 실패했습니다:', err);
       }
@@ -48,38 +55,89 @@ export default function Home() {
     setGroupId(newGroupId);
   };
 
-  const renderPlayerRecords = (player: InGamePlayer) => {
-    if (!player.records || player.records.length === 0) return null;
+  const getPlayerLogSummary = (game: Game, playerId: number): LogSummary[] => {
+    const playerLogs = game.logs.filter(log => log.playerId === playerId);
+    const logSummary = new Map<string, LogSummary>();
+
+    playerLogs.forEach(log => {
+      const key = log.logitem.name;
+      const existing = logSummary.get(key);
+      if (existing) {
+        existing.count += 1;
+        existing.value += log.logitem.value;
+      } else {
+        logSummary.set(key, {
+          name: key,
+          count: 1,
+          value: log.logitem.value,
+          logitemId: log.logitemId
+        });
+      }
+    });
+
+    return Array.from(logSummary.values())
+      .sort((a, b) => a.logitemId - b.logitemId);
+  };
+
+  const getLogStyle = (logName: string) => {
+    const negativeStats = ['파울', '턴오버'];
+    if (negativeStats.includes(logName)) {
+      return {
+        container: 'inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-100',
+        badge: 'ml-1 px-1.5 py-0.5 bg-red-100 rounded-full'
+      };
+    }
+    return {
+      container: 'inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100',
+      badge: 'ml-1 px-1.5 py-0.5 bg-blue-100 rounded-full'
+    };
+  };
+
+  const renderPlayerLogs = (game: Game, player: InGamePlayer) => {
+    const logSummary = getPlayerLogSummary(game, player.id);
+    if (logSummary.length === 0) return null;
 
     return (
-      <div className="ml-4 text-sm text-gray-600">
-        {player.records.map((record) => (
-          <span key={record.id} className="mr-2">
-            {record.type}: {record.value}
-          </span>
-        ))}
+      <div className="mt-1 flex flex-wrap gap-2">
+        {logSummary.map((summary) => {
+          const style = getLogStyle(summary.name);
+          return (
+            <span 
+              key={summary.name} 
+              className={style.container}
+            >
+              {summary.name}
+              <span className={style.badge}>
+                {summary.count}회
+              </span>
+            </span>
+          );
+        })}
       </div>
     );
   };
 
-  const renderTeamPlayers = (game: Game, team: 'HOME' | 'AWAY') => {
-    const teamPlayers = game.players?.filter(player => player.team === team) || [];
+  const renderTeamPlayers = (game: Game, team: 'home' | 'away') => {
+    const players = team === 'home' ? game.homePlayers : game.awayPlayers;
 
     return (
-      <div className="space-y-2">
-        <h5 className="text-sm font-medium text-gray-700 mb-2">
-          {team === 'HOME' ? '홈팀' : '어웨이팀'}
+      <div className="bg-white rounded-lg p-4 shadow-sm">
+        <h5 className="text-base font-semibold text-gray-900 pb-3 border-b border-gray-200 mb-4">
+          {team === 'home' ? '홈팀' : '어웨이팀'}
         </h5>
-        {teamPlayers.length > 0 ? (
-          teamPlayers.map((player) => (
-            <div key={player.id} className="flex items-start">
-              <span className="text-sm font-medium">
-                {player.name}
-                {player.backnumber && ` (#${player.backnumber})`}
-              </span>
-              {renderPlayerRecords(player)}
-            </div>
-          ))
+        {players.length > 0 ? (
+          <div className="space-y-3">
+            {players.map((player) => (
+              <div key={player.id} className="group hover:bg-gray-50 p-2 rounded-lg transition-colors">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900">
+                    {player.name}
+                  </span>
+                  {renderPlayerLogs(game, player)}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="text-sm text-gray-500">등록된 선수가 없습니다.</p>
         )}
@@ -90,67 +148,71 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <p className="text-red-800">{error}</p>
+      <div className="max-w-4xl mx-auto mt-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-800">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">게임 목록</h1>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="bg-white shadow-sm rounded-lg p-6 mb-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">게임 목록</h1>
           <select
             value={groupId}
             onChange={(e) => handleGroupChange(Number(e.target.value))}
-            className="block w-48 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-48 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
           >
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
+            <option key={group?.id} value={group?.id}>
+              {group?.name}
+            </option>
           </select>
         </div>
       </div>
 
-      {games.map((game) => (
-        <div key={game.id} className="bg-white shadow-lg rounded-lg overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900">{game.name}</h3>
-              <span className="text-sm text-gray-600">
-                {new Date(game.date).toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </span>
+      <div className="space-y-6">
+        {games.map((game) => (
+          <div key={game.id} className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
+            <div className="px-6 py-4 bg-white border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">{game.name}</h3>
+                <span className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
+                  {new Date(game.date).toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderTeamPlayers(game, 'home')}
+                {renderTeamPlayers(game, 'away')}
+              </div>
             </div>
           </div>
-          
-          <div className="px-6 py-4">
-            <div className="grid grid-cols-2 gap-8">
-              {renderTeamPlayers(game, 'HOME')}
-              {renderTeamPlayers(game, 'AWAY')}
+        ))}
+        
+        {games.length === 0 && !loading && !error && (
+          <div className="bg-white shadow-sm rounded-lg p-8">
+            <div className="text-center">
+              <p className="text-gray-500 text-lg">등록된 게임이 없습니다.</p>
             </div>
           </div>
-        </div>
-      ))}
-      
-      {games.length === 0 && !loading && !error && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-gray-500 text-center">등록된 게임이 없습니다.</p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
