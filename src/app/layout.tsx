@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className="bg-white">
       <body className={`${inter.className} bg-white min-h-screen`}>
         <Header />
-        <main>{children}</main>
+        <main className="bg-white">{children}</main>
       </body>
     </html>
   );

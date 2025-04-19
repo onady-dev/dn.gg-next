@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import { InGamePlayer, LogItem } from "@/types/game";
 import axios from "axios";
@@ -101,14 +99,14 @@ export default async function PlayerDetailPage({ params }: { params: PageParams 
     const allLogItemNames = allLogItems.map((item: LogItem) => item.name);
 
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-white">
         <PlayerDetailClient player={player} gameRecords={gameRecords} allLogItemNames={allLogItemNames} />
       </div>
     );
   } catch (error) {
     console.error("Error fetching player data:", error);
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">데이터를 불러오는데 실패했습니다</h2>
           <p className="text-gray-600">잠시 후 다시 시도해주세요.</p>
