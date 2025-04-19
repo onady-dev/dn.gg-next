@@ -10,8 +10,15 @@ COPY package*.json ./
 # 의존성 설치
 RUN npm install
 
+# 설정 파일들 복사
+COPY postcss.config.mjs ./
+COPY tailwind.config.mjs ./
+COPY next.config.mjs ./
+COPY tsconfig.json ./
+
 # 소스 코드 복사
-COPY . .
+COPY src ./src
+COPY public ./public
 
 # 빌드
 RUN npm run build
