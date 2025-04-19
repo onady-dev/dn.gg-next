@@ -25,18 +25,19 @@ const serverApi = axios.create({
   },
 });
 
-interface GenerateMetadataProps {
+type PageProps = {
   params: { id: string };
-}
+  searchParams: Record<string, string | string[] | undefined>;
+};
 
-export async function generateMetadata({ params }: GenerateMetadataProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   return {
     title: `Player ${params.id}`,
   };
 }
 
 // 이 함수는 서버 컴포넌트입니다
-async function PlayerDetailPage({ params }: { params: { id: string } }) {
+const PlayerDetailPage = async ({ params }: PageProps) => {
   const playerId = params.id;
 
   try {
@@ -120,6 +121,6 @@ async function PlayerDetailPage({ params }: { params: { id: string } }) {
       </div>
     );
   }
-}
+};
 
 export default PlayerDetailPage;
