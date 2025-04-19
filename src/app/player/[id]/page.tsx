@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { InGamePlayer, LogItem } from "@/types/game";
 import axios from "axios";
@@ -69,7 +71,6 @@ export default async function PlayerDetailPage({ params }: { params: PageParams 
         const existing = logSummary.get(key);
         if (existing) {
           existing.count += 1;
-          existing.value += log.logitem.value;
         } else {
           logSummary.set(key, {
             count: 1,

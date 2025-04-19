@@ -19,17 +19,6 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
     return gameRecords;
   }, [gameRecords]);
 
-  // 각 로그 아이템의 value 값 저장
-  const logItemValues = useMemo(() => {
-    const values: Record<string, number> = {};
-    if (displayRecords.length > 0) {
-      displayRecords[0].logs.forEach((log) => {
-        values[log.name] = log.value;
-      });
-    }
-    return values;
-  }, [displayRecords]);
-
   // 각 로그 아이템별 총 횟수와 점수 계산
   const totalStats = useMemo(() => {
     const totals: Record<string, { count: number; score: number }> = {};
@@ -40,9 +29,7 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
     displayRecords.forEach((record) => {
       record.logs.forEach((log) => {
         totals[log.name].count += log.count;
-        if (log.value !== 0) {
-          totals[log.name].score += log.value;
-        }
+        totals[log.name].score += log.value;
       });
     });
 
@@ -157,14 +144,9 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
                   {allLogItemNames.map((name) => {
                     const logItem = record.logs.find((log) => log.name === name);
                     const count = logItem?.count || 0;
-                    const hasValue = logItemValues[name] !== 0;
-                    const value = logItem?.value || 0;
-                    const isNegative = value < 0;
                     return (
                       <td key={name} className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${isNegative ? "text-red-500" : count > 0 ? "text-blue-600" : "text-gray-400"} font-medium`}>
-                          {count > 0 ? `${hasValue ? value : count}${hasValue ? "점" : "회"}` : "-"}
-                        </span>
+                        <span className={`text-sm ${count > 0 ? "text-blue-600" : "text-gray-400"} font-medium`}>{count > 0 ? `${count}회` : "-"}</span>
                       </td>
                     );
                   })}
@@ -180,13 +162,9 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
                 </td>
                 {allLogItemNames.map((name) => {
                   const stats = totalStats[name];
-                  const hasValue = logItemValues[name] !== 0;
-                  const isNegative = logItemValues[name] < 0;
                   return (
                     <td key={name} className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm font-semibold ${isNegative ? "text-red-500" : stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>
-                        {stats.count > 0 ? `${hasValue ? stats.score : stats.count}${hasValue ? "점" : "회"}` : "-"}
-                      </span>
+                      <span className={`text-sm font-semibold ${stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>{stats.count > 0 ? `${stats.count}회` : "-"}</span>
                     </td>
                   );
                 })}
@@ -201,12 +179,10 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
                 </td>
                 {allLogItemNames.map((name) => {
                   const stats = averageStats[name] || { count: 0, score: 0 };
-                  const hasValue = logItemValues[name] !== 0;
-                  const isNegative = logItemValues[name] < 0;
                   return (
                     <td key={name} className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm font-semibold ${isNegative ? "text-red-500" : stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>
-                        {stats.count > 0 ? `${hasValue ? stats.score.toFixed(1) : stats.count.toFixed(1)}${hasValue ? "점" : ""}` : "-"}
+                      <span className={`text-sm font-semibold ${stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>
+                        {stats.count > 0 ? `${stats.count.toFixed(1)}회` : "-"}
                       </span>
                     </td>
                   );
