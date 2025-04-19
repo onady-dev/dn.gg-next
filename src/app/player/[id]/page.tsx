@@ -17,10 +17,6 @@ interface PlayerLog {
   };
 }
 
-type Props = {
-  params: { id: string };
-};
-
 // 서버에서 사용할 API 인스턴스
 const serverApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3010",
@@ -29,8 +25,18 @@ const serverApi = axios.create({
   },
 });
 
+interface GenerateMetadataProps {
+  params: { id: string };
+}
+
+export async function generateMetadata({ params }: GenerateMetadataProps): Promise<Metadata> {
+  return {
+    title: `Player ${params.id}`,
+  };
+}
+
 // 이 함수는 서버 컴포넌트입니다
-export default async function PlayerDetailPage({ params }: Props) {
+async function PlayerDetailPage({ params }: { params: { id: string } }) {
   const playerId = params.id;
 
   try {
@@ -115,3 +121,5 @@ export default async function PlayerDetailPage({ params }: Props) {
     );
   }
 }
+
+export default PlayerDetailPage;
