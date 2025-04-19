@@ -1,4 +1,4 @@
-import React from "react";
+import { Metadata } from "next";
 import { InGamePlayer, LogItem } from "@/types/game";
 import axios from "axios";
 import { GameRecord } from "./types";
@@ -17,12 +17,9 @@ interface PlayerLog {
   };
 }
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-  searchParams: { [key: string]: string | string[] | undefined };
-}
+type Props = {
+  params: { id: string };
+};
 
 // 서버에서 사용할 API 인스턴스
 const serverApi = axios.create({
@@ -33,7 +30,7 @@ const serverApi = axios.create({
 });
 
 // 이 함수는 서버 컴포넌트입니다
-export default async function PlayerDetailPage({ params, searchParams }: PageProps) {
+export default async function PlayerDetailPage({ params }: Props) {
   const playerId = params.id;
 
   try {
