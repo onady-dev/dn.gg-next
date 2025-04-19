@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Game, Group, InGamePlayer, Log } from "@/types/game";
 import { api } from "@/lib/axios";
 import { styles } from "./styles/constants";
+import { useGroupStore } from "./stores/groupStore";
 
 interface LogSummary {
   name: string;
@@ -32,11 +33,10 @@ interface PlayerStats {
 export default function Home() {
   const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [groupId, setGroupId] = useState<number>(1);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
+  const { selectedGroup, setGroups } = useGroupStore();
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -53,10 +53,12 @@ export default function Home() {
 
   useEffect(() => {
     const fetchGames = async () => {
+      if (!selectedGroup) return;
+
       try {
         const response = await api.get("/game", {
           params: {
-            groupId,
+            groupId: selectedGroup,
           },
         });
         setGames(response.data);
@@ -69,11 +71,7 @@ export default function Home() {
     };
 
     fetchGames();
-  }, [groupId]);
-
-  const handleGroupChange = (newGroupId: number) => {
-    setGroupId(newGroupId);
-  };
+  }, [selectedGroup]);
 
   const getPlayerLogSummary = (game: Game, playerId: number): LogSummary[] => {
     const playerLogs = game.logs.filter((log) => log.playerId === playerId);
@@ -120,35 +118,6 @@ export default function Home() {
         })}
       </div>
     );
-  };
-
-  const getPlayerAllStats = (playerId: number, playerName: string): PlayerStats => {
-    const allStats = new Map<string, LogSummary>();
-
-    games.forEach((game) => {
-      const playerLogs = game.logs.filter((log) => log.playerId === playerId);
-      playerLogs.forEach((log) => {
-        const key = log.logitem.name;
-        const existing = allStats.get(key);
-        if (existing) {
-          existing.count += 1;
-          existing.value += log.logitem.value;
-        } else {
-          allStats.set(key, {
-            name: key,
-            count: 1,
-            value: log.logitem.value,
-            logitemId: log.logitemId,
-          });
-        }
-      });
-    });
-
-    return {
-      playerId,
-      playerName,
-      stats: Array.from(allStats.values()).sort((a, b) => b.count - a.count),
-    };
   };
 
   const handlePlayerClick = (player: InGamePlayer) => {
@@ -240,6 +209,18 @@ export default function Home() {
     );
   };
 
+  if (!selectedGroup) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-lg shadow-sm">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">그룹을 선택해주세요</h2>
+          <p className="text-gray-600 mb-4">상단의 그룹 선택 메뉴에서 원하는 그룹을 선택하면 해당 그룹의 게임 기록을 볼 수 있습니다.</p>
+          <div className="animate-bounce text-4xl text-gray-400">↑</div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -259,20 +240,7 @@ export default function Home() {
   }
 
   return (
-    <div className={styles.container.main}>
-      <div className={styles.container.header}>
-        <div className={styles.header.wrapper}>
-          <h1 className={styles.header.title}>게임 목록</h1>
-          <select value={groupId} onChange={(e) => handleGroupChange(Number(e.target.value))} className={styles.header.select}>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
+    <div className="container mx-auto px-4 py-8 min-h-screen bg-white">
       <div className={styles.container.gameList}>
         {games.map((game) => (
           <div key={game.id} className={styles.game.card}>

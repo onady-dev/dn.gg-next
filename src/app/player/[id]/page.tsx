@@ -99,13 +99,19 @@ export default async function PlayerDetailPage({ params }: { params: PageParams 
     // 모든 로그 아이템 이름 목록 추출
     const allLogItemNames = allLogItems.map((item: LogItem) => item.name);
 
-    // 클라이언트 컴포넌트에 데이터 전달
-    return <PlayerDetailClient player={player} gameRecords={gameRecords} allLogItemNames={allLogItemNames} />;
-  } catch (err) {
-    console.error("Error fetching player data:", err);
     return (
-      <div className="max-w-4xl mx-auto mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-800">선수 정보를 불러오는데 실패했습니다.</p>
+      <div className="min-h-screen">
+        <PlayerDetailClient player={player} gameRecords={gameRecords} allLogItemNames={allLogItemNames} />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error fetching player data:", error);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">데이터를 불러오는데 실패했습니다</h2>
+          <p className="text-gray-600">잠시 후 다시 시도해주세요.</p>
+        </div>
       </div>
     );
   }

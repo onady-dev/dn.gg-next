@@ -2,12 +2,11 @@
 
 import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { InGamePlayer } from "@/types/game";
+import { GameRecord, Player } from "./types";
 import { styles } from "@/app/styles/constants";
-import { GameRecord } from "./types";
 
 interface PlayerDetailClientProps {
-  player: InGamePlayer;
+  player: Player;
   gameRecords: GameRecord[];
   allLogItemNames: string[];
 }
@@ -20,16 +19,30 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
     return gameRecords;
   }, [gameRecords]);
 
-  // 각 로그 아이템별 총 횟수 계산
+  // 각 로그 아이템의 value 값 저장
+  const logItemValues = useMemo(() => {
+    const values: Record<string, number> = {};
+    if (displayRecords.length > 0) {
+      displayRecords[0].logs.forEach((log) => {
+        values[log.name] = log.value;
+      });
+    }
+    return values;
+  }, [displayRecords]);
+
+  // 각 로그 아이템별 총 횟수와 점수 계산
   const totalStats = useMemo(() => {
-    const totals: Record<string, number> = {};
+    const totals: Record<string, { count: number; score: number }> = {};
     allLogItemNames.forEach((name) => {
-      totals[name] = 0;
+      totals[name] = { count: 0, score: 0 };
     });
 
     displayRecords.forEach((record) => {
       record.logs.forEach((log) => {
-        totals[log.name] = (totals[log.name] || 0) + log.count;
+        totals[log.name].count += log.count;
+        if (log.value !== 0) {
+          totals[log.name].score += log.value;
+        }
       });
     });
 
@@ -46,10 +59,13 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
     const gameCount = displayRecords.length;
     if (gameCount === 0) return {};
 
-    const averages: Record<string, number> = {};
+    const averages: Record<string, { count: number; score: number }> = {};
 
     allLogItemNames.forEach((name) => {
-      averages[name] = (totalStats[name] || 0) / gameCount;
+      averages[name] = {
+        count: (totalStats[name].count || 0) / gameCount,
+        score: (totalStats[name].score || 0) / gameCount,
+      };
     });
 
     return averages;
@@ -65,9 +81,9 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
   const headerStyle = {
     position: "sticky" as const,
     top: 0,
-    backgroundColor: "#f9fafb",
+    backgroundColor: "#ffffff",
     zIndex: 30,
-    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.12)",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
   };
 
   // 첫 번째 열 헤더 스타일
@@ -87,74 +103,49 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <button onClick={() => router.back()} className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-2">
-          ← 돌아가기
-        </button>
+    <div className="container mx-auto px-4 py-8 min-h-screen bg-white">
+      <div className="bg-white rounded-xl shadow-sm p-8 mb-8 border border-gray-100">
+        <div className="flex items-center gap-4 mb-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">{player.name}</h1>
+          <span className="px-4 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">
+            {player.position} #{player.number}
+          </span>
+        </div>
       </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">{player.name}</h1>
-
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-        <div className="max-h-[70vh] overflow-auto" style={{ position: "relative" }}>
-          <table className="min-w-full divide-y divide-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-100">
             <thead>
               <tr>
-                <th style={firstColHeaderStyle} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[160px]">
+                <th
+                  scope="col"
+                  style={firstColHeaderStyle}
+                  className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider min-w-[200px] bg-gray-50 border-b border-gray-100"
+                >
                   게임 정보
                 </th>
                 {allLogItemNames.map((name) => (
-                  <th key={name} style={headerStyle} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  <th
+                    key={name}
+                    style={headerStyle}
+                    className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider whitespace-nowrap bg-gray-50 border-b border-gray-100"
+                  >
                     {name}
                   </th>
                 ))}
-                <th style={headerStyle} className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" style={headerStyle} className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider bg-gray-50 border-b border-gray-100">
                   총점
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {displayRecords.length > 0 && (
-                <>
-                  {/* 총 합계 행 */}
-                  <tr className="bg-gray-100 font-semibold border-b-2 border-gray-300">
-                    <td style={{ position: "sticky" as const, left: 0, backgroundColor: "#f3f4f6", zIndex: 10 }} className="px-6 py-4 border-r text-gray-900">
-                      전체 합계
-                    </td>
-                    {allLogItemNames.map((name) => (
-                      <td key={name} className="px-3 py-4 text-center whitespace-nowrap text-sm">
-                        <span className={name === "파울" || name === "턴오버" ? "text-red-700" : "text-blue-700"}>{totalStats[name] || 0}</span>
-                      </td>
-                    ))}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-900 bg-gray-100">{totalScore}점</td>
-                  </tr>
-
-                  {/* 게임당 평균 행 */}
-                  <tr className="bg-gray-50 border-b-2 border-gray-300">
-                    <td style={{ position: "sticky" as const, left: 0, backgroundColor: "#f9fafb", zIndex: 10 }} className="px-6 py-4 border-r text-gray-900">
-                      <div className="flex items-center text-sm">
-                        <span>게임당 평균</span>
-                        <span className="ml-2 text-xs text-gray-500">(총 {displayRecords.length}게임)</span>
-                      </div>
-                    </td>
-                    {allLogItemNames.map((name) => (
-                      <td key={name} className="px-3 py-4 text-center whitespace-nowrap text-sm">
-                        <span className={name === "파울" || name === "턴오버" ? "text-red-600" : "text-blue-600"}>{averageStats[name]?.toFixed(1) || "0.0"}</span>
-                      </td>
-                    ))}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 bg-gray-50">{averageScore.toFixed(1)}점</td>
-                  </tr>
-                </>
-              )}
-
-              {/* 게임 기록 행들 */}
+            <tbody className="divide-y divide-gray-100">
               {displayRecords.map((record) => (
-                <tr key={record.gameId} className="hover:bg-gray-50">
-                  <td style={normalFirstColStyle} className="px-6 py-3 border-r shadow-sm">
+                <tr key={record.gameId} className="hover:bg-blue-50/30 transition-colors duration-150">
+                  <td style={normalFirstColStyle} className="px-6 py-4 whitespace-nowrap group-hover:bg-blue-50/30">
                     <div className="flex flex-col">
-                      <span className="font-medium text-gray-900 text-sm truncate">{record.gameName}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm font-medium text-gray-900">{record.gameName}</span>
+                      <span className="text-sm text-gray-500">
                         {new Date(record.gameDate).toLocaleDateString("ko-KR", {
                           year: "numeric",
                           month: "long",
@@ -165,27 +156,65 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
                   </td>
                   {allLogItemNames.map((name) => {
                     const logItem = record.logs.find((log) => log.name === name);
+                    const count = logItem?.count || 0;
+                    const hasValue = logItemValues[name] !== 0;
+                    const value = logItem?.value || 0;
+                    const isNegative = value < 0;
                     return (
-                      <td key={name} className="px-3 py-3 text-center whitespace-nowrap text-sm font-medium">
-                        {logItem ? (
-                          <span className={name === "파울" || name === "턴오버" ? "text-red-600" : "text-blue-600"}>{logItem.count}</span>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
+                      <td key={name} className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-sm ${isNegative ? "text-red-500" : count > 0 ? "text-blue-600" : "text-gray-400"} font-medium`}>
+                          {count > 0 ? `${hasValue ? value : count}${hasValue ? "점" : "회"}` : "-"}
+                        </span>
                       </td>
                     );
                   })}
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-gray-900">{record.totalScore}점</td>
-                </tr>
-              ))}
-
-              {displayRecords.length === 0 && (
-                <tr>
-                  <td colSpan={allLogItemNames.length + 2} className="px-6 py-4 text-center text-gray-500">
-                    기록이 없습니다.
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`text-sm font-medium ${record.totalScore < 0 ? "text-red-500" : "text-blue-600"}`}>{record.totalScore}점</span>
                   </td>
                 </tr>
-              )}
+              ))}
+              {/* 총계 행 */}
+              <tr className="bg-gray-50/70">
+                <td style={{ ...normalFirstColStyle, backgroundColor: "rgb(249 250 251 / 0.7)" }} className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm font-semibold text-gray-900">전체 기록</span>
+                </td>
+                {allLogItemNames.map((name) => {
+                  const stats = totalStats[name];
+                  const hasValue = logItemValues[name] !== 0;
+                  const isNegative = logItemValues[name] < 0;
+                  return (
+                    <td key={name} className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-sm font-semibold ${isNegative ? "text-red-500" : stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>
+                        {stats.count > 0 ? `${hasValue ? stats.score : stats.count}${hasValue ? "점" : "회"}` : "-"}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`text-sm font-semibold ${totalScore < 0 ? "text-red-500" : "text-blue-600"}`}>{totalScore}점</span>
+                </td>
+              </tr>
+              {/* 평균 행 */}
+              <tr className="bg-blue-50/50">
+                <td style={{ ...normalFirstColStyle, backgroundColor: "rgb(239 246 255 / 0.5)" }} className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm font-semibold text-gray-900">게임당 평균</span>
+                </td>
+                {allLogItemNames.map((name) => {
+                  const stats = averageStats[name] || { count: 0, score: 0 };
+                  const hasValue = logItemValues[name] !== 0;
+                  const isNegative = logItemValues[name] < 0;
+                  return (
+                    <td key={name} className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-sm font-semibold ${isNegative ? "text-red-500" : stats.count > 0 ? "text-blue-600" : "text-gray-400"}`}>
+                        {stats.count > 0 ? `${hasValue ? stats.score.toFixed(1) : stats.count.toFixed(1)}${hasValue ? "점" : ""}` : "-"}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`text-sm font-semibold ${averageScore < 0 ? "text-red-500" : "text-blue-600"}`}>{averageScore.toFixed(1)}점</span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
