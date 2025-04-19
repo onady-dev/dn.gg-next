@@ -17,8 +17,11 @@ interface PlayerLog {
   };
 }
 
-interface PageParams {
-  id: string;
+interface PageProps {
+  params: {
+    id: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 // 서버에서 사용할 API 인스턴스
@@ -30,7 +33,7 @@ const serverApi = axios.create({
 });
 
 // 이 함수는 서버 컴포넌트입니다
-export default async function PlayerDetailPage({ params }: { params: PageParams }) {
+export default async function PlayerDetailPage({ params, searchParams }: PageProps) {
   const playerId = params.id;
 
   try {
