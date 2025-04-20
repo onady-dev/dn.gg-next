@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import StyledComponentsRegistry from "./registry";
 import Header from "./components/Header";
+import GlobalStyles from "./styles/GlobalStyles";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,10 +13,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className="bg-white">
-      <body className={`${inter.className} bg-white min-h-screen`}>
-        <Header />
-        <main className="bg-white">{children}</main>
+    <html lang="ko">
+      <body className={inter.className}>
+        <StyledComponentsRegistry>
+          <GlobalStyles />
+          <Header />
+          <main>{children}</main>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );

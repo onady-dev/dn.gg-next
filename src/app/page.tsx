@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Game, Group, InGamePlayer, Log } from "@/types/game";
 import { api } from "@/lib/axios";
-import { styles } from "./styles/constants";
 import { useGroupStore } from "./stores/groupStore";
+import * as S from "./styles/HomeStyles";
+import NoGroupMessage from "./components/NoGroupMessage";
 
 interface LogSummary {
   name: string;
@@ -19,10 +20,12 @@ interface TeamScore {
   result: "win" | "lose" | "draw";
 }
 
-interface GameScore {
-  home: TeamScore;
-  away: TeamScore;
-}
+type GameScore = {
+  homeScore: number;
+  awayScore: number;
+  homeResult: "win" | "lose" | "draw";
+  awayResult: "win" | "lose" | "draw";
+};
 
 interface PlayerStats {
   playerId: number;
@@ -37,6 +40,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null);
   const { selectedGroup, setGroups } = useGroupStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -98,7 +106,7 @@ export default function Home() {
 
   const getLogStyle = (logName: string) => {
     const negativeStats = ["파울", "턴오버"];
-    return negativeStats.includes(logName) ? styles.logs.negative : styles.logs.positive;
+    return negativeStats.includes(logName);
   };
 
   const renderPlayerLogs = (game: Game, player: InGamePlayer) => {
@@ -106,17 +114,17 @@ export default function Home() {
     if (logSummary.length === 0) return null;
 
     return (
-      <div className={styles.logs.container}>
+      <S.LogContainer>
         {logSummary.map((summary) => {
-          const style = getLogStyle(summary.name);
+          const isNegative = ["파울", "턴오버"].includes(summary.name);
           return (
-            <span key={summary.name} className={style.container}>
+            <S.LogBadge key={summary.name} isNegative={isNegative}>
               {summary.name}
-              <span className={style.badge}>{summary.count}회</span>
-            </span>
+              <S.BadgeCount>{summary.count}회</S.BadgeCount>
+            </S.LogBadge>
           );
         })}
-      </div>
+      </S.LogContainer>
     );
   };
 
@@ -128,27 +136,25 @@ export default function Home() {
     if (!selectedPlayer) return null;
 
     return (
-      <div className={styles.modal.overlay} onClick={() => setSelectedPlayer(null)}>
-        <div className={styles.modal.container} onClick={(e) => e.stopPropagation()}>
-          <div className={styles.modal.header}>
-            <h3 className={styles.modal.title}>{selectedPlayer.playerName}님의 전체 기록</h3>
-            <button className={styles.modal.closeButton} onClick={() => setSelectedPlayer(null)}>
-              ✕
-            </button>
-          </div>
-          <div className={styles.modal.content}>
-            <div className={styles.modal.statsList}>
+      <S.ModalOverlay onClick={() => setSelectedPlayer(null)}>
+        <S.ModalContainer onClick={(e) => e.stopPropagation()}>
+          <S.ModalHeader>
+            <S.ModalTitle>{selectedPlayer.playerName}님의 전체 기록</S.ModalTitle>
+            <S.CloseButton onClick={() => setSelectedPlayer(null)}>✕</S.CloseButton>
+          </S.ModalHeader>
+          <S.ModalContent>
+            <S.StatsList>
               {selectedPlayer.stats.map((stat) => (
-                <div key={stat.logitemId} className={styles.modal.statItem}>
-                  <span className={styles.modal.statName}>{stat.name}</span>
-                  <span className={styles.modal.statValue}>{stat.count}회</span>
-                </div>
+                <S.StatItem key={stat.logitemId}>
+                  <S.StatName>{stat.name}</S.StatName>
+                  <S.StatValue>{stat.count}회</S.StatValue>
+                </S.StatItem>
               ))}
-              {selectedPlayer.stats.length === 0 && <p className="text-gray-500 text-center py-4">기록이 없습니다.</p>}
-            </div>
-          </div>
-        </div>
-      </div>
+              {selectedPlayer.stats.length === 0 && <p style={{ color: "#6B7280", textAlign: "center", padding: "1rem" }}>기록이 없습니다.</p>}
+            </S.StatsList>
+          </S.ModalContent>
+        </S.ModalContainer>
+      </S.ModalOverlay>
     );
   };
 
@@ -156,129 +162,129 @@ export default function Home() {
     const players = team === "home" ? game.homePlayers : game.awayPlayers;
 
     return (
-      <div className={styles.team.container}>
-        <h5 className={styles.team.title}>{team === "home" ? "홈팀" : "어웨이팀"}</h5>
+      <S.TeamContainer>
+        <S.TeamTitle>{team === "home" ? "홈팀" : "어웨이팀"}</S.TeamTitle>
         {players.length > 0 ? (
-          <div className={styles.team.playerList}>
+          <S.PlayerList>
             {players.map((player) => (
-              <div key={player.id} className={styles.team.playerItem}>
-                <div className="flex flex-col">
-                  <span className={styles.team.playerName} onClick={() => handlePlayerClick(player)}>
-                    {player.name}
-                  </span>
+              <S.PlayerItem key={player.id}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <S.PlayerName onClick={() => handlePlayerClick(player)}>{player.name}</S.PlayerName>
                   {renderPlayerLogs(game, player)}
                 </div>
-              </div>
+              </S.PlayerItem>
             ))}
-          </div>
+          </S.PlayerList>
         ) : (
-          <p className={styles.team.noPlayer}>등록된 선수가 없습니다.</p>
+          <S.NoPlayer>등록된 선수가 없습니다.</S.NoPlayer>
         )}
-      </div>
+      </S.TeamContainer>
     );
   };
 
-  const calculateGameScore = (game: Game): GameScore => {
+  const calculateGameScore = (game: Game) => {
     const homeScore = game.logs.filter((log) => game.homePlayers.some((player) => player.id === log.playerId)).reduce((sum, log) => sum + log.logitem.value, 0);
-
     const awayScore = game.logs.filter((log) => game.awayPlayers.some((player) => player.id === log.playerId)).reduce((sum, log) => sum + log.logitem.value, 0);
 
-    const result = homeScore > awayScore ? { home: "win", away: "lose" } : homeScore < awayScore ? { home: "lose", away: "win" } : { home: "draw", away: "draw" };
+    let homeResult: "win" | "lose" | "draw";
+    let awayResult: "win" | "lose" | "draw";
+
+    if (homeScore > awayScore) {
+      homeResult = "win";
+      awayResult = "lose";
+    } else if (homeScore < awayScore) {
+      homeResult = "lose";
+      awayResult = "win";
+    } else {
+      homeResult = "draw";
+      awayResult = "draw";
+    }
 
     return {
-      home: { score: homeScore, result: result.home as "win" | "lose" | "draw" },
-      away: { score: awayScore, result: result.away as "win" | "lose" | "draw" },
+      homeScore,
+      awayScore,
+      homeResult,
+      awayResult,
     };
   };
 
   const renderGameScore = (game: Game) => {
-    const score = calculateGameScore(game);
+    const { homeScore, awayScore, homeResult, awayResult } = calculateGameScore(game);
 
     return (
-      <div className={styles.game.score.container}>
-        <div className={styles.game.score.team}>
-          <span className={styles.game.score.value}>{score.home.score}</span>
-          <span className={styles.game.score.result[score.home.result]}>{score.home.result === "win" ? "승" : score.home.result === "lose" ? "패" : "무"}</span>
-        </div>
-        <span className={styles.game.score.vs}>vs</span>
-        <div className={styles.game.score.team}>
-          <span className={styles.game.score.value}>{score.away.score}</span>
-          <span className={styles.game.score.result[score.away.result]}>{score.away.result === "win" ? "승" : score.away.result === "lose" ? "패" : "무"}</span>
-        </div>
-      </div>
+      <S.GameScoreContainer>
+        <S.TeamScoreWrapper result={homeResult}>
+          <S.ScoreValue>{homeScore}</S.ScoreValue>
+          <S.ResultText result={homeResult}>{homeResult === "win" ? "승리" : homeResult === "lose" ? "패배" : "무승부"}</S.ResultText>
+        </S.TeamScoreWrapper>
+        <S.VsText>VS</S.VsText>
+        <S.TeamScoreWrapper result={awayResult}>
+          <S.ScoreValue>{awayScore}</S.ScoreValue>
+          <S.ResultText result={awayResult}>{awayResult === "win" ? "승리" : awayResult === "lose" ? "패배" : "무승부"}</S.ResultText>
+        </S.TeamScoreWrapper>
+      </S.GameScoreContainer>
     );
   };
 
+  if (!mounted) {
+    return null;
+  }
+
   if (!selectedGroup) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-lg shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">그룹을 선택해주세요</h2>
-          <p className="text-gray-600 mb-4">상단의 그룹 선택 메뉴에서 원하는 그룹을 선택하면 해당 그룹의 게임 기록을 볼 수 있습니다.</p>
-          <div className="animate-bounce text-4xl text-gray-400">↑</div>
-        </div>
-      </div>
+      <S.NoGroupContainer>
+        <S.NoGroupContent>
+          <S.NoGroupTitle>그룹을 선택해주세요</S.NoGroupTitle>
+          <S.NoGroupText>상단의 그룹 선택 메뉴에서 원하는 그룹을 선택하면 해당 그룹의 게임 기록을 볼 수 있습니다.</S.NoGroupText>
+          <S.UpArrow>↑</S.UpArrow>
+        </S.NoGroupContent>
+      </S.NoGroupContainer>
     );
   }
 
   if (loading) {
     return (
-      <div className={styles.loading}>
-        <div className={styles.loadingSpinner}></div>
-      </div>
+      <S.LoadingContainer>
+        <S.LoadingSpinner />
+      </S.LoadingContainer>
     );
   }
 
   if (error) {
-    return (
-      <div className={styles.error.container}>
-        <div className={styles.error.content}>
-          <p className={styles.error.text}>{error}</p>
-        </div>
-      </div>
-    );
+    return <S.ErrorContainer>{error}</S.ErrorContainer>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen bg-white">
-      <div className={styles.container.gameList}>
+    <S.Container>
+      <S.GameList>
         {games.map((game) => (
-          <div key={game.id} className={styles.game.card}>
-            <div className={styles.game.header}>
-              <div className={styles.game.headerContent}>
-                <div className={styles.game.gameInfo}>
-                  <h3 className={styles.game.title}>{game.name}</h3>
-                  <span className={styles.game.date}>
+          <S.GameCard key={game.id}>
+            <S.GameHeader>
+              <S.GameHeaderContent>
+                <S.GameInfo>
+                  <S.GameTitle>{game.name}</S.GameTitle>
+                  <S.GameDate>
                     {new Date(game.date).toLocaleDateString("ko-KR", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
                     })}
-                  </span>
-                </div>
+                  </S.GameDate>
+                </S.GameInfo>
                 {renderGameScore(game)}
-              </div>
-            </div>
-
-            <div className={styles.game.content}>
-              <div className={styles.game.grid}>
+              </S.GameHeaderContent>
+            </S.GameHeader>
+            <S.GameContent>
+              <S.GameGrid>
                 {renderTeamPlayers(game, "home")}
                 {renderTeamPlayers(game, "away")}
-              </div>
-            </div>
-          </div>
+              </S.GameGrid>
+            </S.GameContent>
+          </S.GameCard>
         ))}
-
-        {games.length === 0 && !loading && !error && (
-          <div className={styles.emptyState.container}>
-            <div className={styles.emptyState.text}>
-              <p className={styles.emptyState.message}>등록된 게임이 없습니다.</p>
-            </div>
-          </div>
-        )}
-      </div>
-
+        {games.length === 0 && !loading && !error && <S.EmptyState>등록된 게임이 없습니다.</S.EmptyState>}
+      </S.GameList>
       <PlayerStatsModal />
-    </div>
+    </S.Container>
   );
 }
