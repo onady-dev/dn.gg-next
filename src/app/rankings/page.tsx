@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useGroupStore } from "../stores/groupStore";
 import { api } from "../lib/axios";
 import { PlayerRanking } from "@/types/player";
+import * as S from "./styles/RankingStyles";
+import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 
 interface LogItemRanking {
   id: number;
@@ -122,7 +124,7 @@ export default function Rankings() {
         if (!logItemsResponse.data || !Array.isArray(logItemsResponse.data)) {
           throw new Error("로그 아이템 데이터 형식이 올바르지 않습니다.");
         }
-        const logItems = logItemsResponse.data as LogItemData[];
+        const logItems = (logItemsResponse.data as LogItemData[]).filter((item) => !item.name.includes("자유투"));
 
         // 2. 각 로그 아이템별 로그 데이터 가져오기
         const rankingsData = await Promise.all(
@@ -247,26 +249,18 @@ export default function Rankings() {
   // 로딩 중인 경우의 UI
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
+      <S.Container>
+        <S.LoadingSpinner>로딩 중...</S.LoadingSpinner>
+      </S.Container>
     );
   }
 
   // 에러가 발생한 경우의 UI
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
-          <div className="text-center">
-            <h3 className="text-lg font-medium text-red-600 mb-4">오류가 발생했습니다</h3>
-            <p className="text-gray-600">{error}</p>
-            <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </div>
+      <S.Container>
+        <S.ErrorMessage>{error}</S.ErrorMessage>
+      </S.Container>
     );
   }
 
@@ -280,114 +274,80 @@ export default function Rankings() {
     });
 
   return (
-    <div className="container mx-auto px-4 py-8 min-h-screen bg-white">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">선수 랭킹</h1>
-        <div className="flex bg-white rounded-lg p-1 shadow-sm">
-          <button
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedTab === "total" ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-800"}`}
-            onClick={() => setSelectedTab("total")}
-          >
-            합계
-          </button>
-          <button
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${selectedTab === "average" ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:text-gray-800"}`}
-            onClick={() => setSelectedTab("average")}
-          >
-            평균
-          </button>
-        </div>
-      </div>
+    <S.Container>
+      <S.Header>
+        <S.GroupSelector>
+          {groups.map((group) => (
+            <S.GroupButton key={group.id} isSelected={selectedGroup === group.id} onClick={() => setSelectedGroup(group.id)}>
+              {group.name}
+            </S.GroupButton>
+          ))}
+        </S.GroupSelector>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredRankings.map((ranking) => {
-          const isNegativeStat = ranking.value < 0;
-          const isExpanded = expandedItems.has(ranking.id);
-          const displayPlayers = isExpanded ? ranking.players : ranking.players.slice(0, 3);
-          const hasValue = ranking.name === "득점";
+        <S.TabContainer>
+          <S.TabButton isSelected={selectedTab === "total"} onClick={() => setSelectedTab("total")}>
+            전체 기록
+          </S.TabButton>
+          <S.TabButton isSelected={selectedTab === "average"} onClick={() => setSelectedTab("average")}>
+            게임당 평균
+          </S.TabButton>
+        </S.TabContainer>
+      </S.Header>
 
-          const ExpandButton = () => (
-            <button onClick={() => toggleExpand(ranking.id)} className="text-sm text-gray-600 hover:text-gray-900 focus:outline-none flex items-center gap-1">
-              {isExpanded ? (
-                <>
-                  접기
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                  </svg>
-                </>
-              ) : (
-                <>
-                  더보기
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </>
-              )}
-            </button>
-          );
+      {filteredRankings.map((ranking) => (
+        <S.RankingCard key={ranking.id}>
+          <S.RankingHeader isExpanded={expandedItems.has(ranking.id)} onClick={() => toggleExpand(ranking.id)}>
+            <S.RankingTitle>
+              {ranking.name}
+              {ranking.players.length > 3 && (expandedItems.has(ranking.id) ? <FiChevronUp /> : <FiChevronDown />)}
+            </S.RankingTitle>
+          </S.RankingHeader>
 
-          return (
-            <div key={ranking.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className={`px-4 py-3 ${isNegativeStat ? "bg-red-50" : "bg-green-50"}`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className={`font-medium ${isNegativeStat ? "text-red-700" : "text-green-700"}`}>{ranking.name}</span>
-                    <span className={`px-2 py-1 text-xs rounded-full ${isNegativeStat ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"} font-medium`}>
-                      {ranking.players.length > 0 ? `${ranking.players.length}명` : "기록 없음"}
-                    </span>
-                  </div>
-                  {ranking.players.length > 3 && <ExpandButton />}
-                </div>
-              </div>
+          <S.TopThree>
+            {ranking.players.slice(0, 3).map((player, index) => (
+              <Link key={player.playerId} href={`/player/${player.playerId}`} style={{ textDecoration: "none" }}>
+                <S.PlayerItem isTop>
+                  <S.Rank isTop>{index + 1}</S.Rank>
+                  <S.PlayerInfo>
+                    <S.PlayerName>{player.playerName}</S.PlayerName>
+                    <S.PlayerBadge>
+                      {player.position} #{player.number}
+                    </S.PlayerBadge>
+                  </S.PlayerInfo>
+                  <S.StatValue isPositive={ranking.value >= 0}>
+                    {selectedTab === "total"
+                      ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
+                      : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
+                  </S.StatValue>
+                </S.PlayerItem>
+              </Link>
+            ))}
+          </S.TopThree>
 
-              <div className="divide-y divide-gray-100">
-                {displayPlayers.length > 0 ? (
-                  <>
-                    {displayPlayers.map((player, index) => (
-                      <div key={player.playerId} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
-                        <div className="flex items-center space-x-3">
-                          <span className="w-6 text-gray-500 text-sm">{index + 1}</span>
-                          <div>
-                            <Link href={`/player/${player.playerId}`} className="font-medium text-gray-900 hover:text-blue-600">
-                              {player.playerName}
-                            </Link>
-                            <div className="text-sm text-gray-500">
-                              {player.position} #{player.number}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={`font-medium ${isNegativeStat ? "text-red-600" : "text-green-600"}`}>
-                          {selectedTab === "total"
-                            ? `${hasValue ? player.totalCount : player.value === 0 ? player.totalCount : player.totalCount! / Math.abs(player.value)}${hasValue ? "점" : "회"}`
-                            : `${
-                                hasValue
-                                  ? player.avgPerGame?.toFixed(1)
-                                  : player.value === 0
-                                  ? player.avgPerGame?.toFixed(1)
-                                  : (player.avgPerGame! / Math.abs(player.value)).toFixed(1)
-                              }${hasValue ? "점" : "회"}`}
-                        </div>
-                      </div>
-                    ))}
-                    {ranking.players.length > 3 && (
-                      <div className="px-4 py-2 bg-gray-50">
-                        <button
-                          onClick={() => toggleExpand(ranking.id)}
-                          className="w-full text-sm text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center gap-1"
-                        >
-                          {isExpanded ? "간단히 보기" : `더보기 (${ranking.players.length - 3}명)`}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="p-4 text-center text-gray-500">기록이 없습니다.</div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+          <S.RankingContent isExpanded={expandedItems.has(ranking.id)}>
+            <S.PlayerList>
+              {ranking.players.slice(3).map((player, index) => (
+                <Link key={player.playerId} href={`/player/${player.playerId}`} style={{ textDecoration: "none" }}>
+                  <S.PlayerItem>
+                    <S.Rank>{index + 4}</S.Rank>
+                    <S.PlayerInfo>
+                      <S.PlayerName>{player.playerName}</S.PlayerName>
+                      <S.PlayerBadge>
+                        {player.position} #{player.number}
+                      </S.PlayerBadge>
+                    </S.PlayerInfo>
+                    <S.StatValue isPositive={ranking.value >= 0}>
+                      {selectedTab === "total"
+                        ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
+                        : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
+                    </S.StatValue>
+                  </S.PlayerItem>
+                </Link>
+              ))}
+            </S.PlayerList>
+          </S.RankingContent>
+        </S.RankingCard>
+      ))}
+    </S.Container>
   );
 }
