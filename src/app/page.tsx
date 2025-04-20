@@ -262,16 +262,18 @@ export default function Home() {
             <S.GameHeader>
               <S.GameHeaderContent>
                 <S.GameInfo>
-                  <S.GameTitle>{game.name}</S.GameTitle>
-                  <S.GameDate>
-                    {new Date(game.date).toLocaleDateString("ko-KR", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </S.GameDate>
+                  <S.TitleContainer>
+                    <S.GameTitle>{game.name}</S.GameTitle>
+                    <S.GameDate>
+                      {new Date(game.date).toLocaleDateString("ko-KR", {
+                        year: "numeric",
+                        month: "numeric",
+                        day: "numeric",
+                      })}
+                    </S.GameDate>
+                  </S.TitleContainer>
+                  {renderGameScore(game)}
                 </S.GameInfo>
-                {renderGameScore(game)}
               </S.GameHeaderContent>
             </S.GameHeader>
             <S.GameContent>

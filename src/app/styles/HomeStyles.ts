@@ -39,31 +39,76 @@ export const GameCard = styled.div`
 `;
 
 export const GameHeader = styled.div`
-  padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
 `;
 
 export const GameHeaderContent = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 1rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
 `;
 
 export const GameInfo = styled.div`
   display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  min-width: 0;
+  flex: 1;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 0.75rem;
+  }
+`;
+
+export const TitleContainer = styled.div`
+  display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    align-items: center;
+  }
 `;
 
 export const GameTitle = styled.h3`
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    text-align: center;
+    max-width: 90%;
+  }
 `;
 
 export const GameDate = styled.span`
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  font-weight: 500;
+
+  @media (max-width: 640px) {
+    text-align: center;
+    margin: 0.25rem 0 0;
+  }
 `;
 
 export const GameContent = styled.div`
@@ -120,11 +165,16 @@ export const ErrorContainer = styled.div`
 export const LogBadge = styled.span<{ isNegative?: boolean }>`
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
   background-color: ${(props) => (props.isNegative ? "#FEE2E2" : "#E0F2FE")};
   color: ${(props) => (props.isNegative ? "#DC2626" : "#0284C7")};
+
+  @media (max-width: 640px) {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.25rem;
+  }
 `;
 
 export const TeamContainer = styled.div`
@@ -169,53 +219,92 @@ export const NoPlayer = styled.p`
 
 export const GameScoreContainer = styled.div`
   display: flex;
-  justify-content: center;
   align-items: center;
   gap: 1rem;
-  margin: 1.5rem 0;
+  margin-left: auto;
+  background-color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 640px) {
+    margin: 0.25rem 0 0;
+    width: 100%;
+    justify-content: center;
+    background-color: transparent;
+    box-shadow: none;
+  }
 `;
 
 export const TeamScoreWrapper = styled.div<{ result: "win" | "lose" | "draw" }>`
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  min-width: 80px;
+  justify-content: center;
   color: ${(props) => {
     switch (props.result) {
       case "win":
-        return "#059669";
+        return "#047857";
       case "lose":
-        return "#DC2626";
+        return "#b91c1c";
       default:
-        return "#6B7280";
+        return "#4b5563";
     }
   }};
 `;
 
 export const ScoreValue = styled.span`
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  min-width: 1.5ch;
+  text-align: center;
+
+  @media (max-width: 640px) {
+    font-size: 1.25rem;
+  }
 `;
 
 export const VsText = styled.span`
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   color: #6b7280;
+  margin: 0 0.25rem;
+
+  @media (max-width: 640px) {
+    font-size: 0.875rem;
+  }
 `;
 
 export const ResultText = styled.span<{ result: "win" | "lose" | "draw" }>`
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: ${(props) => {
     switch (props.result) {
       case "win":
-        return "#059669";
+        return "#047857";
       case "lose":
-        return "#DC2626";
+        return "#b91c1c";
       default:
-        return "#6B7280";
+        return "#4b5563";
     }
   }};
+  background-color: ${(props) => {
+    switch (props.result) {
+      case "win":
+        return "#ecfdf5";
+      case "lose":
+        return "#fef2f2";
+      default:
+        return "#f3f4f6";
+    }
+  }};
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+
+  @media (max-width: 640px) {
+    font-size: 0.7rem;
+  }
 `;
 
 export const ModalOverlay = styled.div`
@@ -295,16 +384,26 @@ export const StatValue = styled.span`
 export const LogContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+
+  @media (max-width: 640px) {
+    gap: 0.25rem;
+  }
 `;
 
 export const BadgeCount = styled.span`
-  margin-left: 0.25rem;
-  padding: 0.125rem 0.375rem;
+  margin-left: 0.2rem;
+  padding: 0.1rem 0.25rem;
   background-color: white;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+
+  @media (max-width: 640px) {
+    font-size: 0.65rem;
+    padding: 0.05rem 0.2rem;
+    margin-left: 0.15rem;
+  }
 `;
 
 export const NoGroupContainer = styled.div`
