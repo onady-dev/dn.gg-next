@@ -1,12 +1,11 @@
 import axios from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3010";
-
 export const api = axios.create({
-  baseURL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000",
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // 브라우저 환경인지 확인하는 함수
