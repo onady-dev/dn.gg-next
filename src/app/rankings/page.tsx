@@ -316,8 +316,8 @@ export default function Rankings() {
                   </S.PlayerInfo>
                   <S.StatValue isPositive={ranking.value >= 0}>
                     {selectedTab === "total"
-                      ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
-                      : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
+                      ? `${player.totalCount}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`
+                      : `${player.avgPerGame?.toFixed(1)}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`}
                   </S.StatValue>
                 </S.PlayerItem>
               </Link>
@@ -338,8 +338,8 @@ export default function Rankings() {
                     </S.PlayerInfo>
                     <S.StatValue isPositive={ranking.value >= 0}>
                       {selectedTab === "total"
-                        ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
-                        : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
+                        ? `${player.totalCount}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`
+                        : `${player.avgPerGame?.toFixed(1)}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`}
                     </S.StatValue>
                   </S.PlayerItem>
                 </Link>
