@@ -1,10 +1,17 @@
 export interface Player {
-  id: string;
+  id: number;
   name: string;
+  number: number;  // 등번호
+  groupId: number;
   teamId: string;
   position: string;
-  number: number;
   image?: string;
+}
+
+export interface Team {
+  id: number;
+  name: string;
+  players: Player[];
 }
 
 export interface PlayerRanking {

@@ -1,37 +1,22 @@
-export interface Player {
-  id: number;
-  groupId: number;
-  name: string;
-  backnumber?: string;
-}
-
-export interface GameRecord {
-  id: number;
-  playerId: number;
-  gameId: number;
-  type: string;
-  value: number;
-  timestamp: string;
-}
-
-// export interface InGamePlayer extends Player {
-//   team: 'HOME' | 'AWAY';
-//   records?: GameRecord[];
-// }
+import { Player } from "./player";
 
 export interface Game {
   id: number;
-  date: string;
   name: string;
-  homePlayers: InGamePlayer[];
-  awayPlayers: InGamePlayer[];
-  logs: Log[];
+  date: string;
+  groupId: number;
+  status: 'READY' | 'IN_PROGRESS' | 'FINISHED';
+  teams: {
+    teamA: Player[];
+    teamB: Player[];
+  };
 }
 
-export interface InGamePlayer {
+export interface LogItem {
   id: number;
+  groupId: number;
   name: string;
-  team: 'home' | 'away';
+  value: number;
 }
 
 export interface Log {
@@ -43,13 +28,6 @@ export interface Log {
   game: Game;
   logitem: LogItem;
   player: Player;
-}
-
-export interface LogItem {
-  id: number;
-  groupId: number;
-  name: string;
-  value: number;
 }
 
 export interface Group {

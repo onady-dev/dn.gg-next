@@ -17,6 +17,8 @@ export default function Header() {
           </S.Logo>
           <S.Navigation>
             <Link href="/rankings">랭킹</Link>
+            <Link href="/teams">팀 관리</Link>
+            <Link href="/games">게임 관리</Link>
           </S.Navigation>
         </S.LogoNavContainer>
         <S.GroupSelect value={selectedGroup || ""} onChange={(e) => setSelectedGroup(Number(e.target.value))}>
