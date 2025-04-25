@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { InGamePlayer, LogItem } from "@/types/game";
+import { LogItem } from "@/types/game";
 import axios from "axios";
 import { GameRecord } from "./types";
 import PlayerDetailClient from "./PlayerDetailClient";

@@ -1,5 +1,6 @@
 import { api } from '@/lib/axios';
-import { Game, Player, InGamePlayer } from '@/types/game';
+import { Game } from '@/types/game';
+import { InGamePlayer, Player } from '@/types/player';
 
 export const gameService = {
   getGames: async (): Promise<Game[]> => {
