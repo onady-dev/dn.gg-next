@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Game, Group, InGamePlayer, Log } from "@/types/game";
+import { Game } from "@/types/game";
 import { api } from "@/lib/axios";
 import { useGroupStore } from "./stores/groupStore";
 import * as S from "./styles/HomeStyles";
-import NoGroupMessage from "./components/NoGroupMessage";
+import { InGamePlayer } from "@/types/player";
 
 interface LogSummary {
   name: string;
@@ -102,11 +102,6 @@ export default function Home() {
     });
 
     return Array.from(logSummary.values()).sort((a, b) => a.logitemId - b.logitemId);
-  };
-
-  const getLogStyle = (logName: string) => {
-    const negativeStats = ["파울", "턴오버"];
-    return negativeStats.includes(logName);
   };
 
   const renderPlayerLogs = (game: Game, player: InGamePlayer) => {

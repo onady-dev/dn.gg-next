@@ -27,3 +27,10 @@ export interface PlayerRanking {
   avgScore?: number;
   gamesPlayed?: number;
 }
+
+export interface InGamePlayer {
+  id: number;
+  name: string;
+  position: string;
+  number: number;
+}

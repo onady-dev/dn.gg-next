@@ -6,10 +6,9 @@ export interface Game {
   date: string;
   groupId: number;
   status: 'READY' | 'IN_PROGRESS' | 'FINISHED';
-  teams: {
-    teamA: Player[];
-    teamB: Player[];
-  };
+  homePlayers: Player[];
+  awayPlayers: Player[];
+  logs: Log[];
 }
 
 export interface LogItem {
@@ -34,3 +33,10 @@ export interface Group {
   id: number;
   name: string;
 } 
+
+
+export interface LogItem {
+  id: number;
+  name: string;
+  value: number;
+}
