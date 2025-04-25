@@ -316,7 +316,7 @@ const GamesPage = () => {
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
                   <GameTeams>
-                    <TeamName>{game.teams.teamA[0]?.name} vs {game.teams.teamB[0]?.name}</TeamName>
+                    <TeamName>{game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}</TeamName>
                   </GameTeams>
                   <GameActions>
                     <ActionButton onClick={() => handleFinishGame(game.id)}>
@@ -339,7 +339,7 @@ const GamesPage = () => {
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
                   <GameTeams>
-                    <TeamName>{game.teams.teamA[0]?.name} vs {game.teams.teamB[0]?.name}</TeamName>
+                    <TeamName>{game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}</TeamName>
                   </GameTeams>
                 </GameCard>
               ))}
