@@ -142,9 +142,11 @@ export default function Rankings() {
                 try {
                   const playerResponse = await api.get(`/player/${playerId}`);
                   const player = playerResponse.data;
+                  const totalGamesPlayedResponse = await api.get(`/player/total-games-played/${playerId}`);
+                  const totalGamesPlayed = totalGamesPlayedResponse.data;
+                  const totalValue = stats.totalCount;
                   // value가 0인 경우 횟수만 사용, 그 외에는 value를 곱함
-                  const totalValue = logItem.value === 0 ? stats.totalCount : stats.totalCount * Math.abs(logItem.value);
-                  const avgValue = stats.games.size > 0 ? totalValue / stats.games.size : 0;
+                  const avgValue = totalGamesPlayed > 0 ? totalValue / totalGamesPlayed : 0;
 
                   return {
                     playerId,
@@ -155,7 +157,7 @@ export default function Rankings() {
                     value: logItem.value,
                     totalCount: totalValue,
                     avgPerGame: avgValue,
-                    gamesPlayed: stats.games.size,
+                    gamesPlayed: totalGamesPlayed,
                   } as PlayerRanking;
                 } catch (err) {
                   console.error(`플레이어 정보를 불러오는데 실패했습니다 (ID: ${playerId}):`, err);
@@ -316,8 +318,8 @@ export default function Rankings() {
                   </S.PlayerInfo>
                   <S.StatValue isPositive={ranking.value >= 0}>
                     {selectedTab === "total"
-                      ? `${player.totalCount}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`
-                      : `${player.avgPerGame?.toFixed(1)}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`}
+                      ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
+                      : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
                   </S.StatValue>
                 </S.PlayerItem>
               </Link>
@@ -338,8 +340,8 @@ export default function Rankings() {
                     </S.PlayerInfo>
                     <S.StatValue isPositive={ranking.value >= 0}>
                       {selectedTab === "total"
-                        ? `${player.totalCount}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`
-                        : `${player.avgPerGame?.toFixed(1)}${(ranking.name === "득점" || ranking.name === "3점" || ranking.name === "2점") ? "점" : "회"}`}
+                        ? `${player.totalCount}${ranking.name === "득점" ? "점" : "회"}`
+                        : `${player.avgPerGame?.toFixed(1)}${ranking.name === "득점" ? "점" : "회"}`}
                     </S.StatValue>
                   </S.PlayerItem>
                 </Link>
