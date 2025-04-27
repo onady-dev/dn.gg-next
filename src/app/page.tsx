@@ -104,6 +104,10 @@ export default function Home() {
     return Array.from(logSummary.values()).sort((a, b) => a.logitemId - b.logitemId);
   };
 
+  const getPlayerScore = (game: Game, playerId: number): number => {
+    return game.logs.filter((log) => log.playerId === playerId).reduce((sum, log) => sum + log.logitem.value, 0);
+  };
+
   const renderPlayerLogs = (game: Game, player: InGamePlayer) => {
     const logSummary = getPlayerLogSummary(game, player.id);
     if (logSummary.length === 0) return null;
@@ -156,15 +160,36 @@ export default function Home() {
   const renderTeamPlayers = (game: Game, team: "home" | "away") => {
     const players = team === "home" ? game.homePlayers : game.awayPlayers;
 
+    // 득점 순으로 정렬
+    const sortedPlayers = [...players].sort((a, b) => {
+      const scoreA = getPlayerScore(game, a.id);
+      const scoreB = getPlayerScore(game, b.id);
+      return scoreB - scoreA; // 내림차순 정렬
+    });
+
     return (
       <S.TeamContainer>
         <S.TeamTitle>{team === "home" ? "홈팀" : "어웨이팀"}</S.TeamTitle>
-        {players.length > 0 ? (
+        {sortedPlayers.length > 0 ? (
           <S.PlayerList>
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <S.PlayerItem key={player.id}>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <S.PlayerName onClick={() => handlePlayerClick(player)}>{player.name}</S.PlayerName>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <S.PlayerName onClick={() => handlePlayerClick(player)}>{player.name}</S.PlayerName>
+                    <div
+                      style={{
+                        backgroundColor: "#FEF3C7",
+                        color: "#B45309",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontWeight: "600",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {getPlayerScore(game, player.id)}점
+                    </div>
+                  </div>
                   {renderPlayerLogs(game, player)}
                 </div>
               </S.PlayerItem>
