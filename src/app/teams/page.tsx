@@ -11,7 +11,13 @@ const TeamsPage = () => {
   const { selectedGroup } = useGroupStore();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
-  const [teams, setTeams] = useState<TeamType[]>([]);
+  const [teams, setTeams] = useState<TeamType[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      return savedTeams ? JSON.parse(savedTeams) : [];
+    }
+    return [];
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddTeamModalOpen, setIsAddTeamModalOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
@@ -21,8 +27,20 @@ const TeamsPage = () => {
   useEffect(() => {
     if (selectedGroup) {
       loadPlayers();
+      // 로컬스토리지에서 팀 데이터 불러오기
+      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      if (savedTeams) {
+        setTeams(JSON.parse(savedTeams));
+      }
     }
   }, [selectedGroup]);
+
+  // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
+  useEffect(() => {
+    if (selectedGroup && teams.length > 0) {
+      localStorage.setItem(`teams_${selectedGroup}`, JSON.stringify(teams));
+    }
+  }, [teams, selectedGroup]);
 
   const loadPlayers = async () => {
     try {
@@ -42,33 +60,31 @@ const TeamsPage = () => {
   };
 
   const handleAddToTeam = (teamId: number) => {
-    setTeams(
-      teams.map((team) => {
-        if (team.id === teamId) {
-          return {
-            ...team,
-            players: [...team.players, ...selectedPlayers],
-          };
-        }
-        return team;
-      })
-    );
+    const updatedTeams = teams.map((team) => {
+      if (team.id === teamId) {
+        return {
+          ...team,
+          players: [...team.players, ...selectedPlayers],
+        };
+      }
+      return team;
+    });
+    setTeams(updatedTeams);
     setPlayers(players.filter((p) => !selectedPlayers.find((sp) => sp.id === p.id)));
     setSelectedPlayers([]);
   };
 
   const handleRemoveFromTeam = (teamId: number, player: Player) => {
-    setTeams(
-      teams.map((team) => {
-        if (team.id === teamId) {
-          return {
-            ...team,
-            players: team.players.filter((p) => p.id !== player.id),
-          };
-        }
-        return team;
-      })
-    );
+    const updatedTeams = teams.map((team) => {
+      if (team.id === teamId) {
+        return {
+          ...team,
+          players: team.players.filter((p) => p.id !== player.id),
+        };
+      }
+      return team;
+    });
+    setTeams(updatedTeams);
     setPlayers([...players, player]);
   };
 
@@ -94,9 +110,19 @@ const TeamsPage = () => {
     if (!newTeamName) return;
 
     const newTeamId = Math.max(...teams.map((t) => t.id), 0) + 1;
-    setTeams([...teams, { id: newTeamId, name: newTeamName, players: [] }]);
+    const newTeams = [...teams, { id: newTeamId, name: newTeamName, players: [] }];
+    setTeams(newTeams);
     setNewTeamName("");
     setIsAddTeamModalOpen(false);
+  };
+
+  const handleResetTeams = () => {
+    if (window.confirm("팀 구성을 초기화하시겠습니까? 모든 팀과 선수 구성이 삭제됩니다.")) {
+      setTeams([]);
+      if (selectedGroup) {
+        localStorage.removeItem(`teams_${selectedGroup}`);
+      }
+    }
   };
 
   return (
@@ -106,6 +132,7 @@ const TeamsPage = () => {
         <ButtonGroup>
           <AddTeamButton onClick={() => setIsAddTeamModalOpen(true)}>팀 추가</AddTeamButton>
           <AddPlayerButton onClick={() => setIsAddModalOpen(true)}>선수 추가</AddPlayerButton>
+          <ResetButton onClick={handleResetTeams}>팀 구성 초기화</ResetButton>
         </ButtonGroup>
       </Header>
       <Content>
@@ -398,6 +425,13 @@ const AddToTeamButton = styled.button`
 
   &:hover {
     background-color: var(--hover-color);
+  }
+`;
+
+const ResetButton = styled(AddTeamButton)`
+  background-color: #ef4444;
+  &:hover {
+    background-color: #dc2626;
   }
 `;
 

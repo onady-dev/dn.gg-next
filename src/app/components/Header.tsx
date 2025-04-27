@@ -1,12 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { useGroupStore } from "../stores/groupStore";
 import * as S from "../styles/HeaderStyles";
 
 export default function Header() {
-  const { selectedGroup, setSelectedGroup, groups } = useGroupStore();
+  const { selectedGroup, setSelectedGroup, groups, loadGroups } = useGroupStore();
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
 
   return (
     <S.HeaderContainer>
