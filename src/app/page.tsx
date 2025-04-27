@@ -7,6 +7,19 @@ import { api } from "@/lib/axios";
 import { useGroupStore } from "./stores/groupStore";
 import * as S from "./styles/HomeStyles";
 import { InGamePlayer } from "@/types/player";
+import styled from "styled-components";
+
+const PlayerRecordContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+
+  &:hover {
+    background-color: #f9fafb;
+  }
+`;
 
 interface LogSummary {
   name: string;
@@ -174,9 +187,18 @@ export default function Home() {
           <S.PlayerList>
             {sortedPlayers.map((player) => (
               <S.PlayerItem key={player.id}>
-                <div style={{ display: "flex", flexDirection: "column" }}>
+                <PlayerRecordContainer
+                  onClick={() => handlePlayerClick(player)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      handlePlayerClick(player);
+                    }
+                  }}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <S.PlayerName onClick={() => handlePlayerClick(player)}>{player.name}</S.PlayerName>
+                    <S.PlayerName>{player.name}</S.PlayerName>
                     <div
                       style={{
                         backgroundColor: "#FEF3C7",
@@ -191,7 +213,7 @@ export default function Home() {
                     </div>
                   </div>
                   {renderPlayerLogs(game, player)}
-                </div>
+                </PlayerRecordContainer>
               </S.PlayerItem>
             ))}
           </S.PlayerList>
@@ -277,33 +299,35 @@ export default function Home() {
   return (
     <S.Container>
       <S.GameList>
-        {games.map((game) => (
-          <S.GameCard key={game.id}>
-            <S.GameHeader>
-              <S.GameHeaderContent>
-                <S.GameInfo>
-                  <S.TitleContainer>
-                    <S.GameTitle>{game.name}</S.GameTitle>
-                    <S.GameDate>
-                      {new Date(game.date).toLocaleDateString("ko-KR", {
-                        year: "numeric",
-                        month: "numeric",
-                        day: "numeric",
-                      })}
-                    </S.GameDate>
-                  </S.TitleContainer>
-                  {renderGameScore(game)}
-                </S.GameInfo>
-              </S.GameHeaderContent>
-            </S.GameHeader>
-            <S.GameContent>
-              <S.GameGrid>
-                {renderTeamPlayers(game, "home")}
-                {renderTeamPlayers(game, "away")}
-              </S.GameGrid>
-            </S.GameContent>
-          </S.GameCard>
-        ))}
+        {games
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .map((game) => (
+            <S.GameCard key={game.id}>
+              <S.GameHeader>
+                <S.GameHeaderContent>
+                  <S.GameInfo>
+                    <S.TitleContainer>
+                      <S.GameTitle>{game.name}</S.GameTitle>
+                      <S.GameDate>
+                        {new Date(game.date).toLocaleDateString("ko-KR", {
+                          year: "numeric",
+                          month: "numeric",
+                          day: "numeric",
+                        })}
+                      </S.GameDate>
+                    </S.TitleContainer>
+                    {renderGameScore(game)}
+                  </S.GameInfo>
+                </S.GameHeaderContent>
+              </S.GameHeader>
+              <S.GameContent>
+                <S.GameGrid>
+                  {renderTeamPlayers(game, "home")}
+                  {renderTeamPlayers(game, "away")}
+                </S.GameGrid>
+              </S.GameContent>
+            </S.GameCard>
+          ))}
         {games.length === 0 && !loading && !error && <S.EmptyState>등록된 게임이 없습니다.</S.EmptyState>}
       </S.GameList>
       <PlayerStatsModal />
