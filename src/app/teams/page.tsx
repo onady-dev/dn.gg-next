@@ -45,7 +45,15 @@ const TeamsPage = () => {
   const loadPlayers = async () => {
     try {
       const response = await api.get(`/player?groupId=${selectedGroup}`);
-      setPlayers(response.data);
+      const allPlayers = response.data;
+
+      // 팀에 포함된 선수들의 ID 목록 생성
+      const teamPlayerIds = teams.flatMap((team) => team.players.map((player: Player) => player.id));
+
+      // 팀에 포함되지 않은 선수들만 필터링
+      const availablePlayers = allPlayers.filter((player: Player) => !teamPlayerIds.includes(player.id));
+
+      setPlayers(availablePlayers);
     } catch (error) {
       console.error("선수 목록을 불러오는데 실패했습니다:", error);
     }

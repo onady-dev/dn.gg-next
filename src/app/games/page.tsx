@@ -210,35 +210,43 @@ const ModalButton = styled.button`
 const GamesPage = () => {
   const { selectedGroup } = useGroupStore();
   const [games, setGames] = useState<Game[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [teams, setTeams] = useState<Team[]>(() => {
+    if (typeof window !== "undefined") {
+      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      return savedTeams ? JSON.parse(savedTeams) : [];
+    }
+    return [];
+  });
   const [logItems, setLogItems] = useState<LogItem[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedTeams, setSelectedTeams] = useState<{teamA?: Team; teamB?: Team}>({});
-  const [gameName, setGameName] = useState('');
+  const [selectedTeams, setSelectedTeams] = useState<{ teamA?: Team; teamB?: Team }>({});
+  const [gameName, setGameName] = useState("");
 
   useEffect(() => {
     if (selectedGroup) {
       loadGames();
-      loadTeams();
+      // 로컬스토리지에서 팀 데이터 불러오기
+      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      if (savedTeams) {
+        setTeams(JSON.parse(savedTeams));
+      }
       loadLogItems();
     }
   }, [selectedGroup]);
+
+  // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
+  useEffect(() => {
+    if (selectedGroup && teams.length > 0) {
+      localStorage.setItem(`teams_${selectedGroup}`, JSON.stringify(teams));
+    }
+  }, [teams, selectedGroup]);
 
   const loadGames = async () => {
     try {
       const response = await api.get(`/game?groupId=${selectedGroup}`);
       setGames(response.data);
     } catch (error) {
-      console.error('게임 목록을 불러오는데 실패했습니다:', error);
-    }
-  };
-
-  const loadTeams = async () => {
-    try {
-      const response = await api.get(`/team?groupId=${selectedGroup}`);
-      setTeams(response.data);
-    } catch (error) {
-      console.error('팀 목록을 불러오는데 실패했습니다:', error);
+      console.error("게임 목록을 불러오는데 실패했습니다:", error);
     }
   };
 
@@ -247,7 +255,7 @@ const GamesPage = () => {
       const response = await api.get(`/logitem?groupId=${selectedGroup}`);
       setLogItems(response.data);
     } catch (error) {
-      console.error('로그 아이템을 불러오는데 실패했습니다:', error);
+      console.error("로그 아이템을 불러오는데 실패했습니다:", error);
     }
   };
 
@@ -255,43 +263,43 @@ const GamesPage = () => {
     if (!selectedGroup || !gameName || !selectedTeams.teamA || !selectedTeams.teamB) return;
 
     try {
-      const response = await api.post('/game', {
+      const response = await api.post("/game", {
         groupId: selectedGroup,
         name: gameName,
         teams: {
           teamA: selectedTeams.teamA.players,
-          teamB: selectedTeams.teamB.players
+          teamB: selectedTeams.teamB.players,
         },
-        status: 'READY'
+        status: "READY",
       });
       setGames([...games, response.data]);
       setIsCreateModalOpen(false);
-      setGameName('');
+      setGameName("");
       setSelectedTeams({});
     } catch (error) {
-      console.error('게임 생성에 실패했습니다:', error);
+      console.error("게임 생성에 실패했습니다:", error);
     }
   };
 
   const handleStartGame = async (gameId: number) => {
     try {
       await api.patch(`/game/${gameId}`, {
-        status: 'IN_PROGRESS'
+        status: "IN_PROGRESS",
       });
       loadGames();
     } catch (error) {
-      console.error('게임 시작에 실패했습니다:', error);
+      console.error("게임 시작에 실패했습니다:", error);
     }
   };
 
   const handleFinishGame = async (gameId: number) => {
     try {
       await api.patch(`/game/${gameId}`, {
-        status: 'FINISHED'
+        status: "FINISHED",
       });
       loadGames();
     } catch (error) {
-      console.error('게임 종료에 실패했습니다:', error);
+      console.error("게임 종료에 실패했습니다:", error);
     }
   };
 
@@ -299,29 +307,27 @@ const GamesPage = () => {
     <Container>
       <Header>
         <Title>게임 관리</Title>
-        <CreateGameButton onClick={() => setIsCreateModalOpen(true)}>
-          새 게임 생성
-        </CreateGameButton>
+        <CreateGameButton onClick={() => setIsCreateModalOpen(true)}>새 게임 생성</CreateGameButton>
       </Header>
       <Content>
         <Section>
           <SectionTitle>진행 중인 게임</SectionTitle>
           <GameList>
             {games
-              .filter(game => game.status === 'IN_PROGRESS')
-              .map(game => (
+              .filter((game) => game.status === "IN_PROGRESS")
+              .map((game) => (
                 <GameCard key={game.id}>
                   <GameInfo>
                     <GameName>{game.name}</GameName>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
                   <GameTeams>
-                    <TeamName>{game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}</TeamName>
+                    <TeamName>
+                      {game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}
+                    </TeamName>
                   </GameTeams>
                   <GameActions>
-                    <ActionButton onClick={() => handleFinishGame(game.id)}>
-                      게임 종료
-                    </ActionButton>
+                    <ActionButton onClick={() => handleFinishGame(game.id)}>게임 종료</ActionButton>
                   </GameActions>
                 </GameCard>
               ))}
@@ -331,15 +337,17 @@ const GamesPage = () => {
           <SectionTitle>최근 게임 기록</SectionTitle>
           <GameHistoryList>
             {games
-              .filter(game => game.status === 'FINISHED')
-              .map(game => (
+              .filter((game) => game.status === "FINISHED")
+              .map((game) => (
                 <GameCard key={game.id}>
                   <GameInfo>
                     <GameName>{game.name}</GameName>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
                   <GameTeams>
-                    <TeamName>{game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}</TeamName>
+                    <TeamName>
+                      {game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}
+                    </TeamName>
                   </GameTeams>
                 </GameCard>
               ))}
@@ -351,34 +359,33 @@ const GamesPage = () => {
         <Modal>
           <ModalContent>
             <ModalTitle>새 게임 생성</ModalTitle>
-            <Input
-              type="text"
-              placeholder="게임 이름"
-              value={gameName}
-              onChange={(e) => setGameName(e.target.value)}
-            />
+            <Input type="text" placeholder="게임 이름" value={gameName} onChange={(e) => setGameName(e.target.value)} />
             <Select
-              value={selectedTeams.teamA?.id || ''}
+              value={selectedTeams.teamA?.id || ""}
               onChange={(e) => {
-                const team = teams.find(t => t.id === Number(e.target.value));
+                const team = teams.find((t) => t.id === Number(e.target.value));
                 setSelectedTeams({ ...selectedTeams, teamA: team });
               }}
             >
-              <option value="">팀 A 선택</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
+              <option value="">Home팀 선택</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id} disabled={team.id === selectedTeams.teamB?.id}>
+                  {team.name}
+                </option>
               ))}
             </Select>
             <Select
-              value={selectedTeams.teamB?.id || ''}
+              value={selectedTeams.teamB?.id || ""}
               onChange={(e) => {
-                const team = teams.find(t => t.id === Number(e.target.value));
+                const team = teams.find((t) => t.id === Number(e.target.value));
                 setSelectedTeams({ ...selectedTeams, teamB: team });
               }}
             >
-              <option value="">팀 B 선택</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
+              <option value="">Away팀 선택</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id} disabled={team.id === selectedTeams.teamA?.id}>
+                  {team.name}
+                </option>
               ))}
             </Select>
             <ModalButtons>
@@ -392,4 +399,4 @@ const GamesPage = () => {
   );
 };
 
-export default GamesPage; 
+export default GamesPage;
