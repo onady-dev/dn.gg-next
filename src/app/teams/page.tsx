@@ -11,15 +11,12 @@ const TeamsPage = () => {
   const { selectedGroup } = useGroupStore();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
-  const [teams, setTeams] = useState<TeamType[]>([
-    { id: 1, name: '팀 A', players: [] },
-    { id: 2, name: '팀 B', players: [] }
-  ]);
+  const [teams, setTeams] = useState<TeamType[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddTeamModalOpen, setIsAddTeamModalOpen] = useState(false);
-  const [newTeamName, setNewTeamName] = useState('');
-  const [newPlayerName, setNewPlayerName] = useState('');
-  const [newPlayerNumber, setNewPlayerNumber] = useState('');
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [newPlayerNumber, setNewPlayerNumber] = useState("");
 
   useEffect(() => {
     if (selectedGroup) {
@@ -32,42 +29,46 @@ const TeamsPage = () => {
       const response = await api.get(`/player?groupId=${selectedGroup}`);
       setPlayers(response.data);
     } catch (error) {
-      console.error('선수 목록을 불러오는데 실패했습니다:', error);
+      console.error("선수 목록을 불러오는데 실패했습니다:", error);
     }
   };
 
   const handlePlayerClick = (player: Player) => {
-    if (selectedPlayers.find(p => p.id === player.id)) {
-      setSelectedPlayers(selectedPlayers.filter(p => p.id !== player.id));
+    if (selectedPlayers.find((p) => p.id === player.id)) {
+      setSelectedPlayers(selectedPlayers.filter((p) => p.id !== player.id));
     } else {
       setSelectedPlayers([...selectedPlayers, player]);
     }
   };
 
   const handleAddToTeam = (teamId: number) => {
-    setTeams(teams.map(team => {
-      if (team.id === teamId) {
-        return {
-          ...team,
-          players: [...team.players, ...selectedPlayers]
-        };
-      }
-      return team;
-    }));
-    setPlayers(players.filter(p => !selectedPlayers.find(sp => sp.id === p.id)));
+    setTeams(
+      teams.map((team) => {
+        if (team.id === teamId) {
+          return {
+            ...team,
+            players: [...team.players, ...selectedPlayers],
+          };
+        }
+        return team;
+      })
+    );
+    setPlayers(players.filter((p) => !selectedPlayers.find((sp) => sp.id === p.id)));
     setSelectedPlayers([]);
   };
 
   const handleRemoveFromTeam = (teamId: number, player: Player) => {
-    setTeams(teams.map(team => {
-      if (team.id === teamId) {
-        return {
-          ...team,
-          players: team.players.filter(p => p.id !== player.id)
-        };
-      }
-      return team;
-    }));
+    setTeams(
+      teams.map((team) => {
+        if (team.id === teamId) {
+          return {
+            ...team,
+            players: team.players.filter((p) => p.id !== player.id),
+          };
+        }
+        return team;
+      })
+    );
     setPlayers([...players, player]);
   };
 
@@ -75,26 +76,26 @@ const TeamsPage = () => {
     if (!selectedGroup || !newPlayerName || !newPlayerNumber) return;
 
     try {
-      const response = await api.post('/player', {
+      const response = await api.post("/player", {
         groupId: selectedGroup,
         name: newPlayerName,
-        number: parseInt(newPlayerNumber)
+        number: parseInt(newPlayerNumber),
       });
       setPlayers([...players, response.data]);
       setIsAddModalOpen(false);
-      setNewPlayerName('');
-      setNewPlayerNumber('');
+      setNewPlayerName("");
+      setNewPlayerNumber("");
     } catch (error) {
-      console.error('선수 추가에 실패했습니다:', error);
+      console.error("선수 추가에 실패했습니다:", error);
     }
   };
 
   const handleAddTeam = () => {
     if (!newTeamName) return;
-    
-    const newTeamId = Math.max(...teams.map(t => t.id), 0) + 1;
+
+    const newTeamId = Math.max(...teams.map((t) => t.id), 0) + 1;
     setTeams([...teams, { id: newTeamId, name: newTeamName, players: [] }]);
-    setNewTeamName('');
+    setNewTeamName("");
     setIsAddTeamModalOpen(false);
   };
 
@@ -111,36 +112,23 @@ const TeamsPage = () => {
         <Section>
           <SectionTitle>선수 목록</SectionTitle>
           <PlayerList>
-            {players.map(player => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                isSelected={selectedPlayers.some(p => p.id === player.id)}
-                onClick={() => handlePlayerClick(player)}
-              />
+            {players.map((player) => (
+              <PlayerCard key={player.id} player={player} isSelected={selectedPlayers.some((p) => p.id === player.id)} onClick={() => handlePlayerClick(player)} />
             ))}
           </PlayerList>
         </Section>
         <Section>
           <SectionTitle>팀 구성</SectionTitle>
           <TeamContainer>
-            {teams.map(team => (
+            {teams.map((team) => (
               <Team key={team.id}>
                 <TeamHeader>
                   <TeamTitle>{team.name}</TeamTitle>
-                  {selectedPlayers.length > 0 && (
-                    <AddToTeamButton onClick={() => handleAddToTeam(team.id)}>
-                      선수 추가
-                    </AddToTeamButton>
-                  )}
+                  {selectedPlayers.length > 0 && <AddToTeamButton onClick={() => handleAddToTeam(team.id)}>선수 추가</AddToTeamButton>}
                 </TeamHeader>
                 <TeamPlayerList>
-                  {team.players.map(player => (
-                    <PlayerCard
-                      key={player.id}
-                      player={player}
-                      onClick={() => handleRemoveFromTeam(team.id, player)}
-                    />
+                  {team.players.map((player) => (
+                    <PlayerCard key={player.id} player={player} onClick={() => handleRemoveFromTeam(team.id, player)} />
                   ))}
                 </TeamPlayerList>
               </Team>
@@ -153,18 +141,8 @@ const TeamsPage = () => {
         <Modal>
           <ModalContent>
             <ModalTitle>선수 추가</ModalTitle>
-            <Input
-              type="text"
-              placeholder="선수 이름"
-              value={newPlayerName}
-              onChange={(e) => setNewPlayerName(e.target.value)}
-            />
-            <Input
-              type="number"
-              placeholder="등번호"
-              value={newPlayerNumber}
-              onChange={(e) => setNewPlayerNumber(e.target.value)}
-            />
+            <Input type="text" placeholder="선수 이름" value={newPlayerName} onChange={(e) => setNewPlayerName(e.target.value)} />
+            <Input type="number" placeholder="등번호" value={newPlayerNumber} onChange={(e) => setNewPlayerNumber(e.target.value)} />
             <ModalButtons>
               <ModalButton onClick={handleAddPlayer}>추가</ModalButton>
               <ModalButton onClick={() => setIsAddModalOpen(false)}>취소</ModalButton>
@@ -177,12 +155,7 @@ const TeamsPage = () => {
         <Modal>
           <ModalContent>
             <ModalTitle>팀 추가</ModalTitle>
-            <Input
-              type="text"
-              placeholder="팀 이름"
-              value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
-            />
+            <Input type="text" placeholder="팀 이름" value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} />
             <ModalButtons>
               <ModalButton onClick={handleAddTeam}>추가</ModalButton>
               <ModalButton onClick={() => setIsAddTeamModalOpen(false)}>취소</ModalButton>
@@ -428,4 +401,4 @@ const AddToTeamButton = styled.button`
   }
 `;
 
-export default TeamsPage; 
+export default TeamsPage;
