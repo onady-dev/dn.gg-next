@@ -58,7 +58,7 @@ export const useGroupStore = create<GroupState>((set) => ({
 
       // 저장된 그룹 ID가 있고, 해당 그룹이 존재하는 경우에만 선택
       const storedGroupId = getStoredGroupId();
-      if (storedGroupId && groups.some((group) => group.id === storedGroupId)) {
+      if (storedGroupId && groups.some((group: Group) => group.id === storedGroupId)) {
         set({ selectedGroup: storedGroupId });
       } else if (groups.length > 0) {
         // 저장된 그룹이 없거나 유효하지 않은 경우 첫 번째 그룹 선택
