@@ -300,6 +300,7 @@ export default function Home() {
     <S.Container>
       <S.GameList>
         {games
+          .filter(game => game.status === 'FINISHED')
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .map((game) => (
             <S.GameCard key={game.id}>
@@ -328,7 +329,9 @@ export default function Home() {
               </S.GameContent>
             </S.GameCard>
           ))}
-        {games.length === 0 && !loading && !error && <S.EmptyState>등록된 게임이 없습니다.</S.EmptyState>}
+        {games.filter(game => game.status === 'FINISHED').length === 0 && !loading && !error && (
+          <S.EmptyState>완료된 게임이 없습니다.</S.EmptyState>
+        )}
       </S.GameList>
       <PlayerStatsModal />
     </S.Container>
