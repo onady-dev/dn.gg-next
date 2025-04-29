@@ -115,13 +115,13 @@ const GameHistoryList = styled.div`
 `;
 
 const GameCard = styled.div`
-  background: #f8fafc;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
   @media (min-width: 768px) {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 `;
 
@@ -153,17 +153,55 @@ const GameDate = styled.span`
   }
 `;
 
-const GameTeams = styled.div`
-  margin-bottom: 0.75rem;
-`;
-
-const TeamName = styled.span`
-  font-size: 0.875rem;
-  color: #4b5563;
+const TeamsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.75rem;
 
   @media (min-width: 768px) {
-    font-size: 1rem;
+    flex-direction: row;
+    align-items: flex-start;
   }
+`;
+
+const TeamSection = styled.div`
+  flex: 1;
+  
+  @media (min-width: 768px) {
+    width: 50%;
+    
+    &:first-child {
+      border-right: 1px solid #e5e7eb;
+      padding-right: 1rem;
+    }
+    
+    &:last-child {
+      padding-left: 1rem;
+    }
+  }
+`;
+
+const TeamLabel = styled.span`
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+`;
+
+const PlayerList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+const PlayerTag = styled.span`
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #374151;
 `;
 
 const GameActions = styled.div`
@@ -276,32 +314,6 @@ const ModalButton = styled.button`
       background-color: #e5e7eb;
     }
   }
-`;
-
-const PlayerList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-`;
-
-const PlayerTag = styled.span`
-  background-color: #f3f4f6;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: #374151;
-`;
-
-const TeamSection = styled.div`
-  margin-top: 0.75rem;
-`;
-
-const TeamLabel = styled.span`
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-  margin-right: 0.5rem;
 `;
 
 const GameStatusBadge = styled.span`
@@ -499,23 +511,25 @@ const GamesPage = () => {
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
                   
-                  <TeamSection>
-                    <TeamLabel>홈팀</TeamLabel>
-                    <PlayerList>
-                      {game.homePlayers.map((player) => (
-                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
-                      ))}
-                    </PlayerList>
-                  </TeamSection>
-                  
-                  <TeamSection>
-                    <TeamLabel>어웨이팀</TeamLabel>
-                    <PlayerList>
-                      {game.awayPlayers.map((player) => (
-                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
-                      ))}
-                    </PlayerList>
-                  </TeamSection>
+                  <TeamsContainer>
+                    <TeamSection>
+                      <TeamLabel>홈팀</TeamLabel>
+                      <PlayerList>
+                        {game.homePlayers.map((player) => (
+                          <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                        ))}
+                      </PlayerList>
+                    </TeamSection>
+                    
+                    <TeamSection>
+                      <TeamLabel>어웨이팀</TeamLabel>
+                      <PlayerList>
+                        {game.awayPlayers.map((player) => (
+                          <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                        ))}
+                      </PlayerList>
+                    </TeamSection>
+                  </TeamsContainer>
 
                   <GameActions style={{ marginTop: '1rem' }}>
                     <ActionButton 
@@ -550,23 +564,25 @@ const GamesPage = () => {
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
 
-                  <TeamSection>
-                    <TeamLabel>홈팀</TeamLabel>
-                    <PlayerList>
-                      {game.homePlayers.map((player) => (
-                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
-                      ))}
-                    </PlayerList>
-                  </TeamSection>
-                  
-                  <TeamSection>
-                    <TeamLabel>어웨이팀</TeamLabel>
-                    <PlayerList>
-                      {game.awayPlayers.map((player) => (
-                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
-                      ))}
-                    </PlayerList>
-                  </TeamSection>
+                  <TeamsContainer>
+                    <TeamSection>
+                      <TeamLabel>홈팀</TeamLabel>
+                      <PlayerList>
+                        {game.homePlayers.map((player) => (
+                          <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                        ))}
+                      </PlayerList>
+                    </TeamSection>
+                    
+                    <TeamSection>
+                      <TeamLabel>어웨이팀</TeamLabel>
+                      <PlayerList>
+                        {game.awayPlayers.map((player) => (
+                          <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                        ))}
+                      </PlayerList>
+                    </TeamSection>
+                  </TeamsContainer>
 
                   <GameActions style={{ marginTop: '1rem' }}>
                     <ActionButton onClick={() => handleRestartGame(game.id)}>
