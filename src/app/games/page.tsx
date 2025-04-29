@@ -278,12 +278,47 @@ const ModalButton = styled.button`
   }
 `;
 
+const PlayerList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
+
+const PlayerTag = styled.span`
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #374151;
+`;
+
+const TeamSection = styled.div`
+  margin-top: 0.75rem;
+`;
+
+const TeamLabel = styled.span`
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-right: 0.5rem;
+`;
+
+const GameStatusBadge = styled.span`
+  background-color: #dcfce7;
+  color: #166534;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+`;
+
 const GamesPage = () => {
   const { selectedGroup } = useGroupStore();
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>(() => {
     if (typeof window !== "undefined") {
-      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      const savedTeams = localStorage.getItem(`teams_group_${selectedGroup}`);
       return savedTeams ? JSON.parse(savedTeams) : [];
     }
     return [];
@@ -298,7 +333,7 @@ const GamesPage = () => {
     if (selectedGroup) {
       loadGames();
       // 로컬스토리지에서 팀 데이터 불러오기
-      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+      const savedTeams = localStorage.getItem(`teams_group_${selectedGroup}`);
       if (savedTeams) {
         setTeams(JSON.parse(savedTeams));
       }
@@ -310,7 +345,7 @@ const GamesPage = () => {
   // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
   useEffect(() => {
     if (selectedGroup && teams.length > 0) {
-      localStorage.setItem(`teams_${selectedGroup}`, JSON.stringify(teams));
+      localStorage.setItem(`teams_group_${selectedGroup}`, JSON.stringify(teams));
     }
   }, [teams, selectedGroup]);
 
@@ -336,21 +371,46 @@ const GamesPage = () => {
     if (!selectedGroup || !gameName || !selectedTeams.teamA || !selectedTeams.teamB) return;
 
     try {
+      // 게임 생성 API 호출
       const response = await api.post("/game", {
         groupId: selectedGroup,
         name: gameName,
-        teams: {
-          teamA: selectedTeams.teamA.players,
-          teamB: selectedTeams.teamB.players,
-        },
-        status: "READY",
+        homePlayers: selectedTeams.teamA.players,
+        awayPlayers: selectedTeams.teamB.players,
+        status: "IN_PROGRESS",
       });
-      setGames([...games, response.data]);
+
+      // 새로 생성된 게임 데이터
+      const newGame = {
+        id: response.data.gameId,
+        groupId: selectedGroup,
+        name: gameName,
+        date: new Date(),
+        status: "IN_PROGRESS",
+        homePlayers: selectedTeams.teamA.players.map(player => ({
+          id: player.id,
+          name: player.name,
+          team: 'home'
+        })),
+        awayPlayers: selectedTeams.teamB.players.map(player => ({
+          id: player.id,
+          name: player.name,
+          team: 'away'
+        })),
+        logs: []
+      };
+
+      // 상태 직접 업데이트
+      setGames(prevGames => [...prevGames, newGame as unknown as Game]);
+
+      // 모달 초기화 및 닫기
       setIsCreateModalOpen(false);
       setGameName("");
       setSelectedTeams({});
+
     } catch (error) {
       console.error("게임 생성에 실패했습니다:", error);
+      alert("게임 생성에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -366,13 +426,48 @@ const GamesPage = () => {
   };
 
   const handleFinishGame = async (gameId: number) => {
+    if (!confirm('정말로 게임을 종료하시겠습니까?')) {
+      return;
+    }
+
     try {
       await api.patch(`/game/${gameId}`, {
         status: "FINISHED",
       });
-      loadGames();
+      
+      // 상태 직접 업데이트
+      setGames(prevGames => 
+        prevGames.map(game => 
+          game.id === gameId 
+            ? { ...game, status: "FINISHED" }
+            : game
+        )
+      );
     } catch (error) {
       console.error("게임 종료에 실패했습니다:", error);
+    }
+  };
+
+  const handleRestartGame = async (gameId: number) => {
+    if (!confirm('이 게임을 다시 진행 중인 게임으로 변경하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await api.patch(`/game/${gameId}`, {
+        status: "IN_PROGRESS",
+      });
+      
+      // 상태 직접 업데이트
+      setGames(prevGames => 
+        prevGames.map(game => 
+          game.id === gameId 
+            ? { ...game, status: "IN_PROGRESS" }
+            : game
+        )
+      );
+    } catch (error) {
+      console.error("게임 상태 변경에 실패했습니다:", error);
     }
   };
 
@@ -397,16 +492,40 @@ const GamesPage = () => {
               .map((game) => (
                 <GameCard key={game.id}>
                   <GameInfo>
-                    <GameName>{game.name}</GameName>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <GameName>{game.name}</GameName>
+                      <GameStatusBadge>진행중</GameStatusBadge>
+                    </div>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
-                  <GameTeams>
-                    <TeamName>
-                      {game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}
-                    </TeamName>
-                  </GameTeams>
-                  <GameActions>
-                    <ActionButton onClick={() => handleFinishGame(game.id)}>게임 종료</ActionButton>
+                  
+                  <TeamSection>
+                    <TeamLabel>홈팀</TeamLabel>
+                    <PlayerList>
+                      {game.homePlayers.map((player) => (
+                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                      ))}
+                    </PlayerList>
+                  </TeamSection>
+                  
+                  <TeamSection>
+                    <TeamLabel>어웨이팀</TeamLabel>
+                    <PlayerList>
+                      {game.awayPlayers.map((player) => (
+                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                      ))}
+                    </PlayerList>
+                  </TeamSection>
+
+                  <GameActions style={{ marginTop: '1rem' }}>
+                    <ActionButton 
+                      onClick={() => handleFinishGame(game.id)}
+                      style={{
+                        backgroundColor: '#ef4444',
+                      }}
+                    >
+                      게임 종료
+                    </ActionButton>
                   </GameActions>
                 </GameCard>
               ))}
@@ -421,7 +540,7 @@ const GamesPage = () => {
         </Section>
         <Section>
           <SectionTitle>최근 게임 기록</SectionTitle>
-          <GameHistoryList>
+          <GameList>
             {games
               .filter((game) => game.status === "FINISHED")
               .map((game) => (
@@ -430,11 +549,30 @@ const GamesPage = () => {
                     <GameName>{game.name}</GameName>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
-                  <GameTeams>
-                    <TeamName>
-                      {game.homePlayers[0]?.name} vs {game.awayPlayers[0]?.name}
-                    </TeamName>
-                  </GameTeams>
+
+                  <TeamSection>
+                    <TeamLabel>홈팀</TeamLabel>
+                    <PlayerList>
+                      {game.homePlayers.map((player) => (
+                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                      ))}
+                    </PlayerList>
+                  </TeamSection>
+                  
+                  <TeamSection>
+                    <TeamLabel>어웨이팀</TeamLabel>
+                    <PlayerList>
+                      {game.awayPlayers.map((player) => (
+                        <PlayerTag key={player.id}>{player.name}</PlayerTag>
+                      ))}
+                    </PlayerList>
+                  </TeamSection>
+
+                  <GameActions style={{ marginTop: '1rem' }}>
+                    <ActionButton onClick={() => handleRestartGame(game.id)}>
+                      다시 진행하기
+                    </ActionButton>
+                  </GameActions>
                 </GameCard>
               ))}
             {games.filter((game) => game.status === "FINISHED").length === 0 && (
@@ -444,7 +582,7 @@ const GamesPage = () => {
                 </GameInfo>
               </GameCard>
             )}
-          </GameHistoryList>
+          </GameList>
         </Section>
       </Content>
 
