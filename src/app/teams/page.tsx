@@ -107,7 +107,7 @@ const TeamsPage = () => {
       const response = await api.post("/player", {
         groupId: selectedGroup,
         name: newPlayerName,
-        number: parseInt(newPlayerNumber),
+        backnumber: newPlayerNumber,
       });
       setPlayers([...players, response.data]);
       setIsAddModalOpen(false);
@@ -143,17 +143,13 @@ const TeamsPage = () => {
     return <NoGroupSelected />;
   }
   
-  if (teams.length === 0) {
-    return <EmptyState message="등록된 팀이 없습니다." />;
-  }
-
   return (
     <Container>
       <Header>
         <Title>팀 관리</Title>
         <ButtonGroup>
-          <AddTeamButton onClick={() => setIsAddTeamModalOpen(true)}>팀 추가</AddTeamButton>
           <AddPlayerButton onClick={() => setIsAddModalOpen(true)}>선수 추가</AddPlayerButton>
+          <AddTeamButton onClick={() => setIsAddTeamModalOpen(true)}>팀 추가</AddTeamButton>
           <ResetButton onClick={handleResetTeams}>팀 구성 초기화</ResetButton>
         </ButtonGroup>
       </Header>
