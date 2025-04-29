@@ -94,12 +94,12 @@ const TeamsContainer = styled.div`
   grid-template-columns: 1fr 0.75fr 1fr; /* 3열 그리드로 변경 */
   gap: 0.5rem;
   flex: 1;
-  height: calc(100% - 80px); /* 헤더 높이를 제외한 나머지 공간 */
+  height: calc(100% - 140px); /* 헤더(80px) + 되돌리기 버튼 컨테이너(60px) 높이를 제외 */
   overflow: hidden; /* 스크롤 방지 */
 `;
 
 const TeamSection = styled.div`
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   &:nth-child(1) {
     /* 홈팀 섹션 스타일 */
     .team-header {
@@ -316,6 +316,44 @@ const LogHistoryTime = styled.span`
   margin-left: auto;
 `;
 
+const HistoryButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0.25rem 0;
+  height: 20px;
+  align-items: center;
+`;
+
+const HistoryButton = styled.button`
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  
+  &:hover {
+    background-color: #e5e7eb;
+    transform: translateY(-1px);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+`;
+
 export default function RecordPage() {
   const router = useRouter();
   const params = useParams();
@@ -327,6 +365,25 @@ export default function RecordPage() {
   const [selectedTeam, setSelectedTeam] = useState<'home' | 'away' | null>(null);
   const [homeScore, setHomeScore] = useState(0);
   const [awayScore, setAwayScore] = useState(0);
+  const [undoStack, setUndoStack] = useState<Game[]>([]);
+  const [redoStack, setRedoStack] = useState<Game[]>([]);
+
+  const fetchGameData = async () => {
+    try {
+      // 먼저 게임 데이터를 가져옵니다
+      const gameResponse = await api.get(`/game/${params.id}`);
+      console.log(gameResponse.data);
+      setGame(gameResponse.data);
+      
+      // 게임 데이터를 받은 후 logItems를 가져옵니다
+      const logItemsResponse = await api.get(`/logitem?groupId=${gameResponse.data.groupId}`);
+      setLogItems(logItemsResponse.data);
+    } catch (error) {
+      console.error("데이터를 불러오는데 실패했습니다:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 전역 헤더를 숨기는 useEffect
   useEffect(() => {
@@ -375,23 +432,6 @@ export default function RecordPage() {
   }, []);
 
   useEffect(() => {
-    const fetchGameData = async () => {
-      try {
-        // 먼저 게임 데이터를 가져옵니다
-        const gameResponse = await api.get(`/game/${params.id}`);
-        console.log(gameResponse.data);
-        setGame(gameResponse.data);
-        
-        // 게임 데이터를 받은 후 logItems를 가져옵니다
-        const logItemsResponse = await api.get(`/logitem?groupId=${gameResponse.data.groupId}`);
-        setLogItems(logItemsResponse.data);
-      } catch (error) {
-        console.error("데이터를 불러오는데 실패했습니다:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (params.id) {
       fetchGameData();
     }
@@ -453,7 +493,8 @@ export default function RecordPage() {
     const isHomeTeam = selectedTeam === 'home';
     
     try {
-      await api.post("/log", {
+      // 로그 저장
+      const response = await api.post("/log", {
         gameId: game.id,
         playerId: selectedPlayer,
         logitemId: logItemId,
@@ -465,6 +506,21 @@ export default function RecordPage() {
         setHomeScore(prev => prev + logItem.value);
       } else {
         setAwayScore(prev => prev + logItem.value);
+      }
+
+      // 게임 로그 업데이트
+      if (game.logs) {
+        setGame(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            logs: [...prev.logs, {
+              ...response.data,
+              game: prev,
+              logitem: logItem
+            }]
+          };
+        });
       }
 
       // 기록 성공 후 선택 초기화
@@ -502,111 +558,174 @@ export default function RecordPage() {
       .reverse(); // 최근 기록이 위에 오도록 역순 정렬
   };
 
+  // 실행 취소
+  const handleUndo = async () => {
+    if (!game || !game.logs || game.logs.length === 0) return;
+    
+    try {
+      // 백엔드 API 호출하여 마지막 로그 삭제
+      await api.delete(`/log/game/${game.id}/undo`);
+      
+      // 현재 게임 상태를 redo 스택에 저장
+      setRedoStack(prev => [...prev, game]);
+      
+      // 게임 데이터 새로고침
+      await fetchGameData();
+    } catch (error) {
+      console.error("로그 삭제에 실패했습니다:", error);
+      alert("로그 삭제에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  // 다시 실행
+  const handleRedo = async () => {
+    if (redoStack.length === 0 || !params.id) return;
+    
+    try {
+      // redo 스택에서 마지막 상태 가져오기
+      const nextState = redoStack[redoStack.length - 1];
+      // 백엔드 API 호출하여 로그 다시 생성
+      await api.post(`/log/game/${params.id}/redo`);
+      
+      // redo 스택에서 사용한 상태 제거
+      setRedoStack(prev => prev.slice(0, -1));
+      
+      // 게임 데이터 새로고침
+      await fetchGameData();
+    } catch (error) {
+      console.error("로그 다시 생성에 실패했습니다:", error);
+      alert("로그 다시 생성에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
+
   if (loading) return <div>로딩 중...</div>;
   if (!game) return <div>게임을 찾을 수 없습니다.</div>;
 
   return (
     <Container className="full-height">
       <BackButton onClick={() => router.back()}>뒤로 가기</BackButton>
-        <GameInfoHeader>
-          <GameName>{game.name}</GameName>
-          <ScoreDisplay>
-            <span className="score">{homeScore}</span>
-            <span className="vs">vs</span>
-            <span className="score">{awayScore}</span>
-          </ScoreDisplay>
-        </GameInfoHeader>
-        
-        <TeamsContainer>
-          {/* 홈팀 영역 */}
-          <TeamSection>
-            <TeamHeader className="team-header">
-              {selectedTeam !== 'home' ? (
-                <h3>홈팀</h3>
-              ) : (
-                <CancelButton onClick={handleCancel}>취소</CancelButton>
-              )}
-            </TeamHeader>
+      <GameInfoHeader>
+        <GameName>{game.name}</GameName>
+        <ScoreDisplay>
+          <span className="score">{homeScore}</span>
+          <span className="vs">vs</span>
+          <span className="score">{awayScore}</span>
+        </ScoreDisplay>
+      </GameInfoHeader>
+      
+      
+      
+      <TeamsContainer>
+        {/* 홈팀 영역 */}
+        <TeamSection>
+          <TeamHeader className="team-header">
             {selectedTeam !== 'home' ? (
-              <PlayerList className="player-list">
-                {game.homePlayers.map((player) => (
-                  <PlayerButton
-                    key={player.id}
-                    isSelected={selectedPlayer === player.id}
-                    onClick={() => handlePlayerSelect(player.id, 'home')}
-                  >
-                    {player.name}
-                  </PlayerButton>
-                ))}
-              </PlayerList>
+              <h3>홈팀</h3>
             ) : (
-              <LogItemsContainer className="log-items">
-                {logItems.map((item) => (
-                  <LogItemButton
-                    key={item.id}
-                    isSelected={selectedLogItem === item.id}
-                    onClick={() => handleLogItemSelect(item.id)}
-                  >
-                    {item.name}
-                  </LogItemButton>
-                ))}
-              </LogItemsContainer>
+              <CancelButton onClick={handleCancel}>취소</CancelButton>
             )}
-          </TeamSection>
-          
-          {/* 로그 히스토리 컴포넌트 - 가운데 배치 */}
-          <LogHistoryContainer>
-            {getProcessedLogs().map((log, index) => (
-              <LogHistoryItem key={log.id || index}>
-                <LogHistoryPlayerName style={{
-                  color: log.team === 'home' ? 'var(--primary-color)' : '#ef4444'
-                }}>
-                  {log.playerName}
-                </LogHistoryPlayerName>
-                <LogHistoryActionName>{log.actionName}</LogHistoryActionName>
-              </LogHistoryItem>
-            ))}
-            {getProcessedLogs().length === 0 && (
-              <LogHistoryItem>기록된 로그가 없습니다.</LogHistoryItem>
-            )}
-          </LogHistoryContainer>
+          </TeamHeader>
+          {selectedTeam !== 'home' ? (
+            <PlayerList className="player-list">
+              {game.homePlayers.map((player) => (
+                <PlayerButton
+                  key={player.id}
+                  isSelected={selectedPlayer === player.id}
+                  onClick={() => handlePlayerSelect(player.id, 'home')}
+                >
+                  {player.name}
+                </PlayerButton>
+              ))}
+            </PlayerList>
+          ) : (
+            <LogItemsContainer className="log-items">
+              {logItems.map((item) => (
+                <LogItemButton
+                  key={item.id}
+                  isSelected={selectedLogItem === item.id}
+                  onClick={() => handleLogItemSelect(item.id)}
+                >
+                  {item.name}
+                </LogItemButton>
+              ))}
+            </LogItemsContainer>
+          )}
+        </TeamSection>
+        
+        {/* 로그 히스토리 컴포넌트 - 가운데 배치 */}
+        
+        <LogHistoryContainer>
+        <HistoryButtonContainer>
+        <HistoryButton 
+          onClick={handleUndo}
+          disabled={!game?.logs || game.logs.length === 0}
+          title="되돌리기"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+          </svg>
+        </HistoryButton>
+        <HistoryButton 
+          onClick={handleRedo}
+          disabled={redoStack.length === 0}
+          title="앞으로 돌리기"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+          </svg>
+        </HistoryButton>
+      </HistoryButtonContainer>
+          {getProcessedLogs().map((log, index) => (
+            <LogHistoryItem key={log.id || index}>
+              <LogHistoryPlayerName style={{
+                color: log.team === 'home' ? 'var(--primary-color)' : '#ef4444'
+              }}>
+                {log.playerName}
+              </LogHistoryPlayerName>
+              <LogHistoryActionName>{log.actionName}</LogHistoryActionName>
+            </LogHistoryItem>
+          ))}
+          {getProcessedLogs().length === 0 && (
+            <LogHistoryItem>기록된 로그가 없습니다.</LogHistoryItem>
+          )}
+        </LogHistoryContainer>
 
-          {/* 어웨이팀 영역 */}
-          <TeamSection>
-            <TeamHeader className="team-header">
-              {selectedTeam !== 'away' ? (
-                <h3>어웨이팀</h3>
-              ) : (
-                <CancelButton onClick={handleCancel}>취소</CancelButton>
-              )}
-            </TeamHeader>
+        {/* 어웨이팀 영역 */}
+        <TeamSection>
+          <TeamHeader className="team-header">
             {selectedTeam !== 'away' ? (
-              <PlayerList className="player-list">
-                {game.awayPlayers.map((player) => (
-                  <PlayerButton
-                    key={player.id}
-                    isSelected={selectedPlayer === player.id}
-                    onClick={() => handlePlayerSelect(player.id, 'away')}
-                  >
-                    {player.name}
-                  </PlayerButton>
-                ))}
-              </PlayerList>
+              <h3>어웨이팀</h3>
             ) : (
-              <LogItemsContainer className="log-items">
-                {logItems.map((item) => (
-                  <LogItemButton
-                    key={item.id}
-                    isSelected={selectedLogItem === item.id}
-                    onClick={() => handleLogItemSelect(item.id)}
-                  >
-                    {item.name}
-                  </LogItemButton>
-                ))}
-              </LogItemsContainer>
+              <CancelButton onClick={handleCancel}>취소</CancelButton>
             )}
-          </TeamSection>
-        </TeamsContainer>
+          </TeamHeader>
+          {selectedTeam !== 'away' ? (
+            <PlayerList className="player-list">
+              {game.awayPlayers.map((player) => (
+                <PlayerButton
+                  key={player.id}
+                  isSelected={selectedPlayer === player.id}
+                  onClick={() => handlePlayerSelect(player.id, 'away')}
+                >
+                  {player.name}
+                </PlayerButton>
+              ))}
+            </PlayerList>
+          ) : (
+            <LogItemsContainer className="log-items">
+              {logItems.map((item) => (
+                <LogItemButton
+                  key={item.id}
+                  isSelected={selectedLogItem === item.id}
+                  onClick={() => handleLogItemSelect(item.id)}
+                >
+                  {item.name}
+                </LogItemButton>
+              ))}
+            </LogItemsContainer>
+          )}
+        </TeamSection>
+      </TeamsContainer>
     </Container>
   );
 } 
