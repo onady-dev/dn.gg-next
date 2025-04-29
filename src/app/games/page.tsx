@@ -6,33 +6,59 @@ import type { Game, LogItem, Log } from "@/types/game";
 import type { Team } from "@/types/player";
 import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
-import EmptyState from "../components/EmptyState";
 import NoGroupSelected from "../components/NoGroupSelected";
 
 const Container = styled.div`
-  padding: 2rem;
+  padding: 1rem;
+  margin-top: 4rem;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 `;
 
 const Header = styled.div`
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
   align-items: center;
-  margin-bottom: 2rem;
+
+  @media (min-width: 768px) {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 2rem;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: bold;
+  white-space: nowrap;
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const CreateGameButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.6rem;
   background-color: var(--primary-color);
   color: white;
   border-radius: 0.375rem;
+  font-size: 0.813rem;
   font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.2s;
+
+  @media (min-width: 768px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
 
   &:hover {
     background-color: var(--hover-color);
@@ -41,38 +67,62 @@ const CreateGameButton = styled.button`
 
 const Content = styled.div`
   display: grid;
-  gap: 2rem;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    gap: 1.5rem;
+  }
 `;
 
 const Section = styled.div`
   background: white;
   border-radius: 0.5rem;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    padding: 1.25rem;
+  }
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 1rem;
   color: var(--text-color);
+
+  @media (min-width: 768px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const GameList = styled.div`
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    gap: 1rem;
+  }
 `;
 
 const GameHistoryList = styled.div`
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    gap: 1rem;
+  }
 `;
 
 const GameCard = styled.div`
-  background: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #f8fafc;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  @media (min-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const GameInfo = styled.div`
@@ -80,26 +130,40 @@ const GameInfo = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
+  gap: 0.5rem;
 `;
 
 const GameName = styled.h3`
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-color);
+
+  @media (min-width: 768px) {
+    font-size: 1.125rem;
+  }
 `;
 
 const GameDate = styled.span`
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: #6b7280;
+  white-space: nowrap;
+
+  @media (min-width: 768px) {
+    font-size: 0.875rem;
+  }
 `;
 
 const GameTeams = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 `;
 
 const TeamName = styled.span`
-  font-size: 1rem;
+  font-size: 0.875rem;
   color: #4b5563;
+
+  @media (min-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const GameActions = styled.div`
@@ -108,13 +172,18 @@ const GameActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  padding: 0.375rem 0.75rem;
+  padding: 0.375rem 0.625rem;
   background-color: var(--primary-color);
   color: white;
   border-radius: 0.375rem;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   transition: background-color 0.2s;
+
+  @media (min-width: 768px) {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
 
   &:hover {
     background-color: var(--hover-color);
@@ -312,10 +381,6 @@ const GamesPage = () => {
   if (!selectedGroup) {
     return <NoGroupSelected />;
   }
-  
-  if (games.length === 0) {
-    return <EmptyState message="등록된 게임이 없습니다." />;
-  }
 
   return (
     <Container>
@@ -345,6 +410,13 @@ const GamesPage = () => {
                   </GameActions>
                 </GameCard>
               ))}
+            {games.filter((game) => game.status === "IN_PROGRESS").length === 0 && (
+              <GameCard>
+                <GameInfo>
+                  <GameName>진행 중인 게임이 없습니다.</GameName>
+                </GameInfo>
+              </GameCard>
+            )}
           </GameList>
         </Section>
         <Section>
@@ -365,6 +437,13 @@ const GamesPage = () => {
                   </GameTeams>
                 </GameCard>
               ))}
+            {games.filter((game) => game.status === "FINISHED").length === 0 && (
+              <GameCard>
+                <GameInfo>
+                  <GameName>완료된 게임이 없습니다.</GameName>
+                </GameInfo>
+              </GameCard>
+            )}
           </GameHistoryList>
         </Section>
       </Content>

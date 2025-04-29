@@ -14,8 +14,9 @@ const TeamsPage = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<TeamType[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
+    // 초기 로드 시 로컬스토리지에서 팀 데이터 불러오기
+    if (typeof window !== 'undefined' && selectedGroup) {
+      const savedTeams = localStorage.getItem(`teams_group_${selectedGroup}`);
       return savedTeams ? JSON.parse(savedTeams) : [];
     }
     return [];
@@ -27,41 +28,76 @@ const TeamsPage = () => {
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // 팀 데이터 저장 함수
+  const saveTeamsToLocalStorage = (teamsData: TeamType[]) => {
     if (selectedGroup) {
-      loadPlayers();
-      // 로컬스토리지에서 팀 데이터 불러오기
-      const savedTeams = localStorage.getItem(`teams_${selectedGroup}`);
-      if (savedTeams) {
-        setTeams(JSON.parse(savedTeams));
-      }
+      localStorage.setItem(`teams_group_${selectedGroup}`, JSON.stringify(teamsData));
     }
-    setLoading(false);
-  }, [selectedGroup]);
+  };
 
-  // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
-  useEffect(() => {
-    if (selectedGroup && teams.length > 0) {
-      localStorage.setItem(`teams_${selectedGroup}`, JSON.stringify(teams));
-    }
-  }, [teams, selectedGroup]);
-
-  const loadPlayers = async () => {
+  // 선수 목록과 팀 데이터를 로드하는 함수
+  const loadData = async () => {
+    if (!selectedGroup) return;
+    
+    setLoading(true);
     try {
+      // 선수 목록 로드
       const response = await api.get(`/player?groupId=${selectedGroup}`);
       const allPlayers = response.data;
+      
+      // 저장된 팀 데이터 로드
+      const savedTeams = localStorage.getItem(`teams_group_${selectedGroup}`);
+      let currentTeams = savedTeams ? JSON.parse(savedTeams) : [];
+      
+      // 팀 데이터가 현재 그룹의 것인지 확인
+      const teamsForCurrentGroup = currentTeams.filter((team: TeamType) => {
+        // 팀의 선수들이 현재 그룹의 선수들인지 확인
+        const teamPlayerIds = team.players.map((player: Player) => player.id);
+        return teamPlayerIds.every(playerId => 
+          allPlayers.some((player: Player) => player.id === playerId)
+        );
+      });
+
+      // 팀 데이터가 변경되었다면 업데이트
+      if (teamsForCurrentGroup.length !== currentTeams.length) {
+        currentTeams = teamsForCurrentGroup;
+        localStorage.setItem(`teams_group_${selectedGroup}`, JSON.stringify(teamsForCurrentGroup));
+      }
+
+      setTeams(teamsForCurrentGroup);
 
       // 팀에 포함된 선수들의 ID 목록 생성
-      const teamPlayerIds = teams.flatMap((team) => team.players.map((player: Player) => player.id));
+      const teamPlayerIds = teamsForCurrentGroup.flatMap((team: TeamType) => 
+        team.players.map((player: Player) => player.id)
+      );
 
       // 팀에 포함되지 않은 선수들만 필터링
-      const availablePlayers = allPlayers.filter((player: Player) => !teamPlayerIds.includes(player.id));
+      const availablePlayers = allPlayers.filter(
+        (player: Player) => !teamPlayerIds.includes(player.id)
+      );
 
       setPlayers(availablePlayers);
     } catch (error) {
-      console.error("선수 목록을 불러오는데 실패했습니다:", error);
+      console.error("데이터를 불러오는데 실패했습니다:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // 그룹이 변경될 때마다 해당 그룹의 팀 데이터 로드
+  useEffect(() => {
+    if (selectedGroup) {
+      const savedTeams = localStorage.getItem(`teams_group_${selectedGroup}`);
+      setTeams(savedTeams ? JSON.parse(savedTeams) : []);
+      loadData();
+    }
+    setSelectedPlayers([]);
+  }, [selectedGroup]);
 
   const handlePlayerClick = (player: Player) => {
     if (selectedPlayers.find((p) => p.id === player.id)) {
@@ -82,6 +118,7 @@ const TeamsPage = () => {
       return team;
     });
     setTeams(updatedTeams);
+    saveTeamsToLocalStorage(updatedTeams);
     setPlayers(players.filter((p) => !selectedPlayers.find((sp) => sp.id === p.id)));
     setSelectedPlayers([]);
   };
@@ -97,6 +134,7 @@ const TeamsPage = () => {
       return team;
     });
     setTeams(updatedTeams);
+    saveTeamsToLocalStorage(updatedTeams);
     setPlayers([...players, player]);
   };
 
@@ -122,17 +160,24 @@ const TeamsPage = () => {
     if (!newTeamName) return;
 
     const newTeamId = Math.max(...teams.map((t) => t.id), 0) + 1;
-    const newTeams = [...teams, { id: newTeamId, name: newTeamName, players: [] }];
-    setTeams(newTeams);
+    const updatedTeams = [...teams, { id: newTeamId, name: newTeamName, players: [] }];
+    setTeams(updatedTeams);
+    saveTeamsToLocalStorage(updatedTeams);
     setNewTeamName("");
     setIsAddTeamModalOpen(false);
   };
 
-  const handleResetTeams = () => {
+  const handleResetTeams = async () => {
     if (window.confirm("팀 구성을 초기화하시겠습니까? 모든 팀과 선수 구성이 삭제됩니다.")) {
       setTeams([]);
       if (selectedGroup) {
-        localStorage.removeItem(`teams_${selectedGroup}`);
+        localStorage.removeItem(`teams_group_${selectedGroup}`);
+        try {
+          const response = await api.get(`/player?groupId=${selectedGroup}`);
+          setPlayers(response.data);
+        } catch (error) {
+          console.error("선수 목록을 불러오는데 실패했습니다:", error);
+        }
       }
     }
   };
@@ -212,85 +257,139 @@ const TeamsPage = () => {
   );
 };
 
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+export default TeamsPage;
 
-  @media (min-width: 640px) {
-    padding: 2rem;
+const Container = styled.div`
+  padding: 1rem;
+  margin-top: 4rem;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
   }
 `;
 
 const Header = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
+  align-items: center;
 
-  @media (min-width: 640px) {
-    flex-direction: row;
+  @media (min-width: 768px) {
+    flex-wrap: nowrap;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+    gap: 2rem;
   }
 `;
 
 const Title = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: bold;
   white-space: nowrap;
 
-  @media (min-width: 640px) {
-    font-size: 2rem;
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  width: 100%;
-
-  @media (min-width: 640px) {
-    width: auto;
-    gap: 1rem;
-  }
-`;
-
-const AddTeamButton = styled.button`
   flex: 1;
-  padding: 0.5rem;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  transition: background-color 0.2s;
+  justify-content: flex-end;
 
-  @media (min-width: 640px) {
-    flex: none;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-  }
-
-  &:hover {
-    background-color: var(--hover-color);
+  @media (min-width: 768px) {
+    flex-wrap: nowrap;
   }
 `;
 
-const AddPlayerButton = styled(AddTeamButton)``;
+const Button = styled.button`
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.813rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: 0 0 auto;
+
+  @media (min-width: 768px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+`;
+
+const AddPlayerButton = styled(Button)`
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: #45a049;
+  }
+`;
+
+const AddTeamButton = styled(Button)`
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: #1e88e5;
+  }
+`;
+
+const ResetButton = styled(Button)`
+  background-color: #f44336;
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: #e53935;
+  }
+`;
+
+const TeamHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
+const AddToTeamButton = styled(Button)`
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.8rem;
+  
+  &:hover {
+    background-color: #45a049;
+  }
+`;
 
 const Content = styled.div`
   display: grid;
-  gap: 2rem;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    gap: 1.5rem;
+  }
 `;
 
 const Section = styled.section`
   background: white;
   border-radius: 0.5rem;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    padding: 1.25rem;
+  }
 `;
 
 const SectionTitle = styled.h2`
@@ -302,35 +401,35 @@ const SectionTitle = styled.h2`
 
 const PlayerList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
-  padding: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.375rem;
+  padding: 0.375rem;
 
   @media (min-width: 640px) {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
   }
 `;
 
 const TeamContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
 
   @media (min-width: 768px) {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
   }
 `;
 
 const Team = styled.div`
   background: #f8fafc;
   border-radius: 0.375rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
 
   @media (min-width: 640px) {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 `;
 
@@ -343,11 +442,11 @@ const TeamTitle = styled.h3`
 
 const TeamPlayerList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.375rem;
 
   @media (min-width: 640px) {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
   }
 `;
@@ -404,53 +503,24 @@ const ModalButton = styled.button`
   border-radius: 0.375rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:first-child {
+  
+  &.primary {
     background-color: var(--primary-color);
     color: white;
-
+    border: none;
+    
     &:hover {
-      background-color: var(--hover-color);
+      background-color: var(--primary-dark);
     }
   }
-
-  &:last-child {
-    background-color: #f3f4f6;
+  
+  &.secondary {
+    background-color: transparent;
     color: var(--text-color);
-
+    border: 1px solid var(--border-color);
+    
     &:hover {
-      background-color: #e5e7eb;
+      background-color: var(--bg-hover);
     }
   }
 `;
-
-const TeamHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const AddToTeamButton = styled.button`
-  padding: 0.375rem 0.75rem;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: var(--hover-color);
-  }
-`;
-
-const ResetButton = styled(AddTeamButton)`
-  background-color: #ef4444;
-  &:hover {
-    background-color: #dc2626;
-  }
-`;
-
-export default TeamsPage;
