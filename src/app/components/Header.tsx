@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useGroupStore } from "../stores/groupStore";
 import * as S from "../styles/HeaderStyles";
@@ -11,7 +11,6 @@ interface HeaderProps {
 
 export default function Header({ onCreateGroupClick }: HeaderProps) {
   const { selectedGroup, setSelectedGroup, groups, loadGroups } = useGroupStore();
-
   useEffect(() => {
     loadGroups();
   }, []);

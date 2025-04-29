@@ -7,6 +7,7 @@ import type { Team } from "@/types/player";
 import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
 import NoGroupSelected from "../components/NoGroupSelected";
+import { useRouter } from "next/navigation";
 
 const Container = styled.div`
   padding: 1rem;
@@ -326,6 +327,7 @@ const GameStatusBadge = styled.span`
 `;
 
 const GamesPage = () => {
+  const router = useRouter();
   const { selectedGroup } = useGroupStore();
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>(() => {
@@ -483,6 +485,10 @@ const GamesPage = () => {
     }
   };
 
+  const handleGameClick = (gameId: number) => {
+    router.push(`/record/${gameId}`);
+  };
+
   if (loading) return <div>로딩 중...</div>;
   
   if (!selectedGroup) {
@@ -502,7 +508,11 @@ const GamesPage = () => {
             {games
               .filter((game) => game.status === "IN_PROGRESS")
               .map((game) => (
-                <GameCard key={game.id}>
+                <GameCard 
+                  key={game.id} 
+                  onClick={() => handleGameClick(game.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <GameInfo>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <GameName>{game.name}</GameName>
