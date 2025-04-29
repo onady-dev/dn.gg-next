@@ -3,107 +3,165 @@
 import styled from "styled-components";
 
 export const HeaderContainer = styled.header`
-  background-color: white;
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 40;
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.95);
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 `;
 
 export const HeaderInner = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
-  height: 4rem;
+  padding: 0 20px;
+  height: 100%;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
 `;
 
 export const LogoNavContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 48px;
+  
+  @media (max-width: 768px) {
+    gap: 24px;
+  }
 `;
 
-export const Logo = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 700;
-
+export const Logo = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  
   a {
-    color: var(--text-color);
+    color: #000;
     text-decoration: none;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: var(--primary-color);
-    }
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
   }
 `;
 
 export const Navigation = styled.nav`
   display: flex;
-  gap: 1.5rem;
-
+  gap: 32px;
+  
   a {
-    color: #6b7280;
-    font-weight: 500;
-    transition: color 0.2s ease;
-    position: relative;
-
+    color: #666;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    transition: color 0.2s;
+    
     &:hover {
-      color: var(--text-color);
+      color: #000;
     }
-
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background-color: var(--primary-color);
-      transform: scaleX(0);
-      transition: transform 0.2s ease;
+    
+    svg {
+      width: 20px;
+      height: 20px;
+      display: none;
     }
-
-    &:hover::after {
-      transform: scaleX(1);
+  }
+  
+  @media (max-width: 768px) {
+    gap: 16px;
+    
+    a {
+      font-size: 0;
+      
+      svg {
+        display: block;
+        width: 24px;
+        height: 24px;
+      }
     }
   }
 `;
 
+export const GroupContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    gap: 8px;
+  }
+`;
+
 export const GroupSelect = styled.select`
-  padding: 0.5rem 2rem 0.5rem 1rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
   background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-color);
+  font-size: 14px;
   min-width: 140px;
   cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-  transition: all 0.2s ease;
+  
+  @media (max-width: 768px) {
+    min-width: 100px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+`;
 
+export const CreateGroupButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 6px;
+  background-color: #007AFF;
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
   &:hover {
-    border-color: var(--primary-color);
+    background-color: #0056b3;
   }
-
-  &:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+  
+  &::before {
+    content: "+";
+    font-size: 20px;
+    line-height: 1;
+    display: none;
+    height: 20px;
+    width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  
+  @media (max-width: 768px) {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    font-size: 0;
+    justify-content: center;
+    align-items: center;
+    
+    &::before {
+      display: flex;
+      margin: 0;
+    }
+  }
+`;
 
-  option {
-    color: var(--text-color);
-    padding: 0.5rem;
+export const EmptyStateText = styled.span`
+  color: #666;
+  font-size: 14px;
+  
+  @media (max-width: 768px) {
+    font-size: 12px;
   }
 `;

@@ -6,6 +6,8 @@ import type { Game, LogItem, Log } from "@/types/game";
 import type { Team } from "@/types/player";
 import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
+import EmptyState from "../components/EmptyState";
+import NoGroupSelected from "../components/NoGroupSelected";
 
 const Container = styled.div`
   padding: 2rem;
@@ -221,6 +223,7 @@ const GamesPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState<{ teamA?: Team; teamB?: Team }>({});
   const [gameName, setGameName] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (selectedGroup) {
@@ -232,6 +235,7 @@ const GamesPage = () => {
       }
       loadLogItems();
     }
+    setLoading(false);
   }, [selectedGroup]);
 
   // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
@@ -302,6 +306,16 @@ const GamesPage = () => {
       console.error("게임 종료에 실패했습니다:", error);
     }
   };
+
+  if (loading) return <div>로딩 중...</div>;
+  
+  if (!selectedGroup) {
+    return <NoGroupSelected />;
+  }
+  
+  if (games.length === 0) {
+    return <EmptyState message="등록된 게임이 없습니다." />;
+  }
 
   return (
     <Container>

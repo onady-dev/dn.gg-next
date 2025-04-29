@@ -6,6 +6,8 @@ import type { Player, Team as TeamType } from "@/types/player";
 import PlayerCard from "./components/PlayerCard";
 import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
+import EmptyState from "../components/EmptyState";
+import NoGroupSelected from "../components/NoGroupSelected";
 
 const TeamsPage = () => {
   const { selectedGroup } = useGroupStore();
@@ -23,6 +25,7 @@ const TeamsPage = () => {
   const [newTeamName, setNewTeamName] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (selectedGroup) {
@@ -33,6 +36,7 @@ const TeamsPage = () => {
         setTeams(JSON.parse(savedTeams));
       }
     }
+    setLoading(false);
   }, [selectedGroup]);
 
   // 팀 데이터가 변경될 때마다 로컬스토리지에 저장
@@ -132,6 +136,16 @@ const TeamsPage = () => {
       }
     }
   };
+
+  if (loading) return <div>로딩 중...</div>;
+  
+  if (!selectedGroup) {
+    return <NoGroupSelected />;
+  }
+  
+  if (teams.length === 0) {
+    return <EmptyState message="등록된 팀이 없습니다." />;
+  }
 
   return (
     <Container>

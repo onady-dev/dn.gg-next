@@ -7,6 +7,8 @@ import { api } from "../lib/axios";
 import { PlayerRanking } from "@/types/player";
 import * as S from "./styles/RankingStyles";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import EmptyState from "../components/EmptyState";
+import NoGroupSelected from "../components/NoGroupSelected";
 
 interface LogItemRanking {
   id: number;
@@ -60,11 +62,6 @@ export default function Rankings() {
         const response = await api.get("/group/all");
         const groupData = response.data;
         setGroups(groupData);
-
-        // 그룹이 있고 선택된 그룹이 없는 경우에만 첫 번째 그룹 선택
-        if (groupData.length > 0 && !selectedGroup) {
-          setSelectedGroup(groupData[0].id);
-        }
       } catch (err) {
         console.error("그룹 데이터를 불러오는데 실패했습니다:", err);
         setError("그룹 데이터를 불러오는데 실패했습니다.");
@@ -219,7 +216,9 @@ export default function Rankings() {
             .sort((a, b) => (selectedTab === "total" ? b.totalScore! - a.totalScore! : b.avgScore! - a.avgScore!)),
         };
 
-        setRankings([scoreRanking, ...rankingsData]);
+        // 득점 데이터가 있을 때만 추가
+        const hasScoreData = scoreRanking.players.length > 0 && scoreRanking.players.some(p => p.totalScore! > 0);
+        setRankings(hasScoreData ? [scoreRanking, ...rankingsData] : rankingsData);
       } catch (err) {
         console.error("랭킹 데이터를 불러오는데 실패했습니다:", err);
         setError("랭킹 데이터를 불러오는데 실패했습니다.");
@@ -237,15 +236,7 @@ export default function Rankings() {
 
   // 그룹이 선택되지 않은 경우의 UI
   if (!selectedGroup && !loading) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-lg shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">그룹을 선택해주세요</h2>
-          <p className="text-gray-600 mb-4">상단의 그룹 선택 메뉴에서 원하는 그룹을 선택하면 해당 그룹의 랭킹을 볼 수 있습니다.</p>
-          <div className="animate-bounce text-4xl text-gray-400">↑</div>
-        </div>
-      </div>
-    );
+    return <NoGroupSelected />;
   }
 
   // 로딩 중인 경우의 UI
@@ -264,6 +255,10 @@ export default function Rankings() {
         <S.ErrorMessage>{error}</S.ErrorMessage>
       </S.Container>
     );
+  }
+
+  if (rankings.length === 0) {
+    return <EmptyState message="등록된 랭킹 데이터가 없습니다." />;
   }
 
   const filteredRankings = rankings
