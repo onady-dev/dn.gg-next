@@ -60,11 +60,18 @@ const TeamsContainer = styled.div`
 `;
 
 const TeamSection = styled.div`
-  h3 {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #6b7280;
-    margin-bottom: 0.5rem;
+  &:nth-child(2) {
+    /* 어웨이팀 섹션 스타일 */
+    .team-header {
+      justify-content: flex-end;
+      text-align: right;
+      
+      h3 {
+        order: 2;
+        margin-right: 0;
+        margin-left: 0.5rem;
+      }
+    }
   }
 `;
 
@@ -284,7 +291,7 @@ export default function RecordPage() {
         <TeamsContainer>
           {/* 홈팀 영역 */}
           <TeamSection>
-            <TeamHeader>
+            <TeamHeader className="team-header">
               <h3>홈팀</h3>
               {selectedTeam === 'home' && (
                 <CancelButton onClick={handleCancel}>취소</CancelButton>
@@ -319,7 +326,7 @@ export default function RecordPage() {
 
           {/* 어웨이팀 영역 */}
           <TeamSection>
-            <TeamHeader>
+            <TeamHeader className="team-header">
               <h3>어웨이팀</h3>
               {selectedTeam === 'away' && (
                 <CancelButton onClick={handleCancel}>취소</CancelButton>
