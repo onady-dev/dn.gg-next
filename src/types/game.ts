@@ -32,11 +32,4 @@ export interface Log {
 export interface Group {
   id: number;
   name: string;
-} 
-
-
-export interface LogItem {
-  id: number;
-  name: string;
-  value: number;
 }

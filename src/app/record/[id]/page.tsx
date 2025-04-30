@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import styled from "styled-components";
-import { Game, LogItem } from "@/types/game";
+import { Game, LogItem, Log } from "@/types/game";
+import { Player } from "@/types/player";
 import { api } from "@/lib/axios";
 
 const Container = styled.div`
@@ -157,10 +158,10 @@ const PlayerButton = styled.button<{ isSelected: boolean }>`
   border-radius: 0.75rem;
   font-size: 0.95rem;
   transition: all 0.2s;
-  background-color: ${props => props.isSelected ? 'var(--primary-color)' : '#f3f4f6'};
-  color: ${props => props.isSelected ? 'white' : '#374151'};
+  background-color: ${props => props.isSelected ? 'var(--primary-color)' : '#e8f0fe'};
+  color: ${props => props.isSelected ? 'white' : '#1a73e8'};
   height: 3rem;
-  font-weight: ${props => props.isSelected ? 'bold' : 'normal'};
+  font-weight: ${props => props.isSelected ? 'bold' : '500'};
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
@@ -171,7 +172,7 @@ const PlayerButton = styled.button<{ isSelected: boolean }>`
   width: 100%;
   
   &:hover {
-    background-color: ${props => props.isSelected ? 'var(--hover-color)' : '#e5e7eb'};
+    background-color: ${props => props.isSelected ? 'var(--hover-color)' : '#d3e3fd'};
     transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
@@ -196,14 +197,28 @@ const LogItemsContainer = styled.div`
   padding: 0.25rem;
 `;
 
-const LogItemButton = styled.button<{ isSelected: boolean }>`
+interface LogItemButtonProps {
+  isSelected: boolean;
+  hasValue: boolean;
+  isNegative: boolean;
+}
+
+const LogItemButton = styled.button<LogItemButtonProps>`
   padding: 0.75rem 0.5rem;
   border-radius: 0.75rem;
   font-size: 0.95rem;
   text-align: center;
   transition: all 0.2s;
-  background-color: ${props => props.isSelected ? 'var(--primary-color)' : '#f3f4f6'};
-  color: ${props => props.isSelected ? 'white' : '#374151'};
+  background-color: ${props => {
+    if (props.isSelected) return 'var(--primary-color)';
+    if (props.isNegative) return '#fee2e2';
+    return props.hasValue ? '#dcfce7' : '#f3f4f6';
+  }};
+  color: ${props => {
+    if (props.isSelected) return 'white';
+    if (props.isNegative) return '#dc2626';
+    return props.hasValue ? '#16a34a' : '#374151';
+  }};
   height: 3rem;
   display: flex;
   align-items: center;
@@ -215,7 +230,11 @@ const LogItemButton = styled.button<{ isSelected: boolean }>`
   width: 100%;
   
   &:hover {
-    background-color: ${props => props.isSelected ? 'var(--hover-color)' : '#e5e7eb'};
+    background-color: ${props => {
+      if (props.isSelected) return 'var(--hover-color)';
+      if (props.isNegative) return '#fecaca';
+      return props.hasValue ? '#bbf7d0' : '#e5e7eb';
+    }};
     transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
@@ -493,6 +512,9 @@ export default function RecordPage() {
     const isHomeTeam = selectedTeam === 'home';
     
     try {
+      // 새로운 기록을 추가할 때 redo 스택 초기화
+      setRedoStack([]);
+      
       // 로그 저장
       const response = await api.post("/log", {
         gameId: game.id,
@@ -501,28 +523,12 @@ export default function RecordPage() {
         groupId: game.groupId
       });
       
-      // 스코어 업데이트
-      if (isHomeTeam) {
-        setHomeScore(prev => prev + logItem.value);
-      } else {
-        setAwayScore(prev => prev + logItem.value);
-      }
-
-      // 게임 로그 업데이트
-      if (game.logs) {
-        setGame(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            logs: [...prev.logs, {
-              ...response.data,
-              game: prev,
-              logitem: logItem
-            }]
-          };
-        });
-      }
-
+      // 현재 게임 상태를 undo 스택에 저장
+      setUndoStack(prev => [...prev, game]);
+      
+      // 게임 데이터 새로고침
+      await fetchGameData();
+      
       // 기록 성공 후 선택 초기화
       setSelectedPlayer(null);
       setSelectedTeam(null);
@@ -563,14 +569,34 @@ export default function RecordPage() {
     if (!game || !game.logs || game.logs.length === 0) return;
     
     try {
-      // 백엔드 API 호출하여 마지막 로그 삭제
-      await api.delete(`/log/game/${game.id}/undo`);
-      
       // 현재 게임 상태를 redo 스택에 저장
       setRedoStack(prev => [...prev, game]);
       
+      // 백엔드 API 호출하여 마지막 로그 삭제
+      await api.delete(`/log/game/${game.id}/undo`);
+      
       // 게임 데이터 새로고침
-      await fetchGameData();
+      const response = await api.get<Game>(`/game/${game.id}`);
+      const updatedGame = response.data;
+      setGame(updatedGame);
+      
+      // 스코어 즉시 업데이트
+      let home = 0;
+      let away = 0;
+      updatedGame.logs?.forEach((log: Log) => {
+        const isHomePlayer = updatedGame.homePlayers.some((player: Player) => player.id === log.playerId);
+        const logItem = logItems.find(item => item.id === log.logitemId);
+        if (logItem) {
+          if (isHomePlayer) {
+            home += logItem.value;
+          } else {
+            away += logItem.value;
+          }
+        }
+      });
+      setHomeScore(home);
+      setAwayScore(away);
+      
     } catch (error) {
       console.error("로그 삭제에 실패했습니다:", error);
       alert("로그 삭제에 실패했습니다. 다시 시도해주세요.");
@@ -579,11 +605,12 @@ export default function RecordPage() {
 
   // 다시 실행
   const handleRedo = async () => {
-    if (redoStack.length === 0 || !params.id) return;
+    if (redoStack.length === 0 || !params.id || !game) return;
     
     try {
-      // redo 스택에서 마지막 상태 가져오기
-      const nextState = redoStack[redoStack.length - 1];
+      // 현재 게임 상태를 undo 스택에 저장
+      setUndoStack(prev => [...prev, game]);
+      
       // 백엔드 API 호출하여 로그 다시 생성
       await api.post(`/log/game/${params.id}/redo`);
       
@@ -591,7 +618,27 @@ export default function RecordPage() {
       setRedoStack(prev => prev.slice(0, -1));
       
       // 게임 데이터 새로고침
-      await fetchGameData();
+      const response = await api.get<Game>(`/game/${params.id}`);
+      const updatedGame = response.data;
+      setGame(updatedGame);
+      
+      // 스코어 즉시 업데이트
+      let home = 0;
+      let away = 0;
+      updatedGame.logs?.forEach((log: Log) => {
+        const isHomePlayer = updatedGame.homePlayers.some((player: Player) => player.id === log.playerId);
+        const logItem = logItems.find(item => item.id === log.logitemId);
+        if (logItem) {
+          if (isHomePlayer) {
+            home += logItem.value;
+          } else {
+            away += logItem.value;
+          }
+        }
+      });
+      setHomeScore(home);
+      setAwayScore(away);
+      
     } catch (error) {
       console.error("로그 다시 생성에 실패했습니다:", error);
       alert("로그 다시 생성에 실패했습니다. 다시 시도해주세요.");
@@ -643,6 +690,8 @@ export default function RecordPage() {
                 <LogItemButton
                   key={item.id}
                   isSelected={selectedLogItem === item.id}
+                  hasValue={item.value !== 0}
+                  isNegative={["파울", "턴오버"].includes(item.name)}
                   onClick={() => handleLogItemSelect(item.id)}
                 >
                   {item.name}
@@ -717,6 +766,8 @@ export default function RecordPage() {
                 <LogItemButton
                   key={item.id}
                   isSelected={selectedLogItem === item.id}
+                  hasValue={item.value !== 0}
+                  isNegative={["파울", "턴오버"].includes(item.name)}
                   onClick={() => handleLogItemSelect(item.id)}
                 >
                   {item.name}
