@@ -115,44 +115,61 @@ export const GroupSelect = styled.select`
 
 export const CreateGroupButton = styled.button`
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   background-color: #007AFF;
   color: white;
   border: none;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-weight: 500;
+  
+  svg {
+    width: 18px;
+    height: 18px;
+  }
   
   &:hover {
     background-color: #0056b3;
+    transform: translateY(-1px);
   }
   
-  &::before {
-    content: "+";
-    font-size: 20px;
-    line-height: 1;
-    display: none;
-    height: 20px;
-    width: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  &:active {
+    transform: translateY(0);
   }
   
   @media (max-width: 768px) {
     padding: 0;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
     font-size: 0;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+    position: relative;
     
-    &::before {
-      display: flex;
-      margin: 0;
+    svg {
+      width: 20px;
+      height: 20px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    &:hover {
+      background-color: #0056b3;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+    
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 122, 255, 0.2);
     }
   }
 `;
