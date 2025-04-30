@@ -107,9 +107,9 @@ export const GroupSelect = styled.select`
   cursor: pointer;
   
   @media (max-width: 768px) {
-    min-width: 100px;
+    min-width: 60px;
     padding: 6px 8px;
-    font-size: 12px;
+    font-size: 14px;
   }
 `;
 
