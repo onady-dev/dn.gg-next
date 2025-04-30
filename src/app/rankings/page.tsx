@@ -273,14 +273,6 @@ export default function Rankings() {
   return (
     <S.Container>
       <S.Header>
-        <S.GroupSelector>
-          {groups.map((group) => (
-            <S.GroupButton key={group.id} isSelected={selectedGroup === group.id} onClick={() => setSelectedGroup(group.id)}>
-              {group.name}
-            </S.GroupButton>
-          ))}
-        </S.GroupSelector>
-
         <S.TabContainer>
           <S.TabButton isSelected={selectedTab === "total"} onClick={() => setSelectedTab("total")}>
             전체 기록

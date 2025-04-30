@@ -21,8 +21,12 @@ const spin = keyframes`
 
 export const Container = styled.div`
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+  margin: 4rem auto 0;
+  padding: 1rem;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 `;
 
 export const GameList = styled.div`

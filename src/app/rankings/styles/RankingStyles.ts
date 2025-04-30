@@ -4,10 +4,14 @@ import styled from "styled-components";
 
 export const Container = styled.div`
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-  min-height: 100vh;
+  margin: 4rem auto 0;
+  padding: 1rem;
+  min-height: calc(100vh - 4rem);
   background-color: #f8fafc;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 
   @media (max-width: 640px) {
     padding: 1rem 0.5rem;
