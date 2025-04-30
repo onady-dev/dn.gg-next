@@ -10,14 +10,21 @@ import { api } from "@/lib/axios";
 const Container = styled.div`
   padding: 0.5rem;
   position: relative;
-  height: 100vh; /* 전체 높이 고정 */
+  min-height: 100vh;
+  height: 100%;
   background-color: var(--background-color);
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 스크롤 방지 */
+  overflow: auto;
 
   @media (min-width: 768px) {
     padding: 1rem;
+  }
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    height: auto;
+    min-height: calc(100vh + 60px);
+    padding-bottom: 70px;
   }
 `;
 
@@ -52,7 +59,12 @@ const GameInfo = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* 스크롤 방지 */
+  overflow: visible;
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    overflow: visible;
+    height: auto;
+  }
 `;
 
 const GameInfoHeader = styled.div`
@@ -92,11 +104,17 @@ const ScoreDisplay = styled.div`
 
 const TeamsContainer = styled.div`
   display: grid;
-  grid-template-columns: 1fr 0.75fr 1fr; /* 3열 그리드로 변경 */
+  grid-template-columns: 1fr 0.75fr 1fr;
   gap: 0.5rem;
   flex: 1;
-  height: calc(100% - 140px); /* 헤더(80px) + 되돌리기 버튼 컨테이너(60px) 높이를 제외 */
-  overflow: hidden; /* 스크롤 방지 */
+  min-height: 0;
+  height: auto;
+  overflow: visible;
+
+  @media (orientation: landscape) and (max-height: 500px) {
+    height: auto;
+    min-height: 300px;
+  }
 `;
 
 const TeamSection = styled.div`
@@ -146,11 +164,16 @@ const TeamSection = styled.div`
 
 const PlayerList = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개씩 */
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
-  overflow-y: auto; /* 필요한 경우 선수 목록만 스크롤 허용 */
-  max-height: 100%;
+  overflow-y: auto;
+  height: auto;
+  min-height: 0;
   padding: 0.25rem;
+  
+  @media (orientation: landscape) and (max-height: 500px) {
+    max-height: none;
+  }
 `;
 
 const PlayerButton = styled.button<{ isSelected: boolean }>`
@@ -190,11 +213,16 @@ const PlayerButton = styled.button<{ isSelected: boolean }>`
 
 const LogItemsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 한 줄에 3개씩 */
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   overflow-y: auto;
-  max-height: 100%;
+  height: auto;
+  min-height: 0;
   padding: 0.25rem;
+  
+  @media (orientation: landscape) and (max-height: 500px) {
+    max-height: none;
+  }
 `;
 
 interface LogItemButtonProps {
