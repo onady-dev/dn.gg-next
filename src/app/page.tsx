@@ -300,7 +300,7 @@ export default function Home() {
     <S.Container>
       <S.GameList>
         {games
-          .filter(game => game.status === 'FINISHED')
+          // .filter(game => game.status === 'FINISHED')
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .map((game) => (
             <S.GameCard key={game.id}>
@@ -308,7 +308,7 @@ export default function Home() {
                 <S.GameHeaderContent>
                   <S.GameInfo>
                     <S.TitleContainer>
-                      <S.GameTitle>{game.name}</S.GameTitle>
+                      <S.GameTitle>{game.name}{game.status === 'IN_PROGRESS' && ' (진행중)'}</S.GameTitle>
                       <S.GameDate>
                         {new Date(game.date).toLocaleDateString("ko-KR", {
                           year: "numeric",
