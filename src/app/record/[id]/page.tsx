@@ -732,39 +732,39 @@ export default function RecordPage() {
         {/* 로그 히스토리 컴포넌트 - 가운데 배치 */}
         
         <LogHistoryContainer>
-        <HistoryButtonContainer>
-        <HistoryButton 
-          onClick={handleUndo}
-          disabled={!game?.logs || game.logs.length === 0}
-          title="되돌리기"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
-          </svg>
-        </HistoryButton>
-        <HistoryButton 
-          onClick={handleRedo}
-          disabled={redoStack.length === 0}
-          title="앞으로 돌리기"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
-          </svg>
-        </HistoryButton>
-      </HistoryButtonContainer>
-          {getProcessedLogs().map((log, index) => (
-            <LogHistoryItem key={log.id || index}>
-              <LogHistoryPlayerName style={{
-                color: log.team === 'home' ? 'var(--primary-color)' : '#ef4444'
-              }}>
-                {log.playerName}
-              </LogHistoryPlayerName>
-              <LogHistoryActionName>{log.actionName}</LogHistoryActionName>
-            </LogHistoryItem>
-          ))}
-          {getProcessedLogs().length === 0 && (
-            <LogHistoryItem>기록된 로그가 없습니다.</LogHistoryItem>
-          )}
+          <HistoryButtonContainer>
+          <HistoryButton 
+            onClick={handleUndo}
+            disabled={!game?.logs || game.logs.length === 0}
+            title="되돌리기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+            </svg>
+          </HistoryButton>
+          {/* <HistoryButton 
+            onClick={handleRedo}
+            disabled={redoStack.length === 0}
+            title="앞으로 돌리기"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+            </svg>
+          </HistoryButton> */}
+          </HistoryButtonContainer>
+            {getProcessedLogs().map((log, index) => (
+              <LogHistoryItem key={log.id || index}>
+                <LogHistoryPlayerName style={{
+                  color: log.team === 'home' ? 'var(--primary-color)' : '#ef4444'
+                }}>
+                  {log.playerName}
+                </LogHistoryPlayerName>
+                <LogHistoryActionName>{log.actionName}</LogHistoryActionName>
+              </LogHistoryItem>
+            ))}
+            {getProcessedLogs().length === 0 && (
+              <LogHistoryItem>기록된 로그가 없습니다.</LogHistoryItem>
+            )}
         </LogHistoryContainer>
 
         {/* 어웨이팀 영역 */}

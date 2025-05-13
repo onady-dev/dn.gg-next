@@ -139,7 +139,7 @@ const TeamsPage = () => {
   };
 
   const handleAddPlayer = async () => {
-    if (!selectedGroup || !newPlayerName || !newPlayerNumber) return;
+    if (!selectedGroup || !newPlayerName ) return;
 
     try {
       const response = await api.post("/player", {
