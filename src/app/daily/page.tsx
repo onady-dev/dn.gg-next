@@ -51,7 +51,8 @@ const DailyPage = () => {
       
       try {
         const response = await api.get(`/game?groupId=${selectedGroup}`);
-        const dates = Array.from(new Set(response.data.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item: any) => item.date))) as string[];
+        const data = response.data.filter((item: any) => item.status === "FINISHED");
+        const dates = Array.from(new Set(data.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item: any) => item.date))) as string[];
         setDateOptions(dates);
 
         // 데이터가 있으면 가장 최근 날짜 선택
