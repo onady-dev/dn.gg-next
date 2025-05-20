@@ -25,10 +25,7 @@ interface LogItem {
 }
 
 const DailyPage = () => {
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  });
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [dateOptions, setDateOptions] = useState<string[]>([]);
   const [playerRecords, setPlayerRecords] = useState<PlayerRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
