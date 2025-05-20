@@ -66,12 +66,12 @@ export default function Header({ onCreateGroupClick }: HeaderProps) {
           ) : (
             <S.EmptyStateText>등록된 그룹이 없습니다</S.EmptyStateText>
           )}
-          <S.CreateGroupButton onClick={onCreateGroupClick}>
+          {/* <S.CreateGroupButton onClick={onCreateGroupClick}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             그룹 생성
-          </S.CreateGroupButton>
+          </S.CreateGroupButton> */}
         </S.GroupContainer>
       </S.HeaderInner>
     </S.HeaderContainer>

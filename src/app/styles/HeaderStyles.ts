@@ -73,7 +73,7 @@ export const Navigation = styled.nav`
   }
   
   @media (max-width: 768px) {
-    gap: 16px;
+    gap: 8px;
     
     a {
       font-size: 0;
@@ -107,8 +107,9 @@ export const GroupSelect = styled.select`
   cursor: pointer;
   
   @media (max-width: 768px) {
+    margin-left: 10px;
     min-width: 60px;
-    padding: 6px 8px;
+    padding: 4px 6px;
     font-size: 14px;
   }
 `;
