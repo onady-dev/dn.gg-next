@@ -258,7 +258,8 @@ const DateSelect = styled.select`
 
 const TableContainer = styled.div`
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+  max-height: 600px;
   
   &::-webkit-scrollbar {
     height: 8px;
@@ -299,6 +300,7 @@ const Th = styled.th<{ isFirst?: boolean }>`
   position: sticky;
   top: 0;
   z-index: ${(props) => (props.isFirst ? 2 : 1)};
+      min-width: 65px;
 
   ${(props) =>
     props.isFirst &&
@@ -306,11 +308,7 @@ const Th = styled.th<{ isFirst?: boolean }>`
     left: 0;
     background-color: #f8fafc;
     border-right: 2px solid #cbd5e1;
-    min-width: 150px;
 
-    @media (max-width: 640px) {
-      min-width: 120px;
-    }
   `}
 
   &:last-child {
@@ -330,6 +328,7 @@ const Td = styled.td<{ isFirst?: boolean; highlight?: boolean }>`
   border-right: 1px solid #e2e8f0;
   background-color: ${(props) => (props.highlight ? "#f8fafc" : "white")};
   position: relative;
+      min-width: 65px;
 
   ${(props) =>
     props.isFirst &&
@@ -339,11 +338,7 @@ const Td = styled.td<{ isFirst?: boolean; highlight?: boolean }>`
     background-color: ${props.highlight ? "#f8fafc" : "white"};
     z-index: 1;
     border-right: 2px solid #cbd5e1;
-    min-width: 150px;
 
-    @media (max-width: 640px) {
-      min-width: 120px;
-    }
   `}
 
   &:last-child {
