@@ -207,17 +207,24 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
+  margin-top: 4rem;
 `;
 
 const Header = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: 1.5rem;
-  
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  padding-top: 1rem;
+
   @media (min-width: 768px) {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    padding-top: 0;
   }
 `;
 
@@ -258,25 +265,10 @@ const DateSelect = styled.select`
 
 const TableContainer = styled.div`
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: 600px;
-  
-  &::-webkit-scrollbar {
-    height: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+  /* overflow-y, max-height 제거 */
+  /* 모바일에서만 가로 스크롤 */
+  @media (max-width: 640px) {
+    max-width: 100vw;
   }
 `;
 
