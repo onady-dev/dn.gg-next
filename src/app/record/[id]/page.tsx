@@ -177,6 +177,7 @@ const PlayerList = styled.div`
 `;
 
 const PlayerButton = styled.button<{ isSelected: boolean }>`
+  position: relative;
   padding: 0.75rem 0.5rem;
   border-radius: 0.75rem;
   font-size: 0.95rem;
@@ -209,6 +210,21 @@ const PlayerButton = styled.button<{ isSelected: boolean }>`
     font-size: 0.9rem;
     padding: 0.75rem 0.5rem;
   }
+`;
+
+const PlayerBadge = styled.span`
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 999px;
+  padding: 0.1em 0.5em;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
 `;
 
 const LogItemsContainer = styled.div`
@@ -414,12 +430,12 @@ export default function RecordPage() {
   const [awayScore, setAwayScore] = useState(0);
   const [undoStack, setUndoStack] = useState<Game[]>([]);
   const [redoStack, setRedoStack] = useState<Game[]>([]);
+  const [foulCount, setFoulCount] = useState<{[playerId: number]: number}>({});
 
   const fetchGameData = async () => {
     try {
       // 먼저 게임 데이터를 가져옵니다
       const gameResponse = await api.get(`/game/${params.id}`);
-      console.log(gameResponse.data);
       setGame(gameResponse.data);
       
       // 게임 데이터를 받은 후 logItems를 가져옵니다
@@ -483,14 +499,13 @@ export default function RecordPage() {
       fetchGameData();
     }
   }, [params.id]);
-
   // 로그에서 스코어 계산
   useEffect(() => {
     if (!game) return;
     
     let home = 0;
     let away = 0;
-    
+    let foulCount: any = {};
     // 게임 로그에서 스코어 계산
     game.logs?.forEach(log => {
       // 플레이어가 어느 팀인지 확인
@@ -504,8 +519,13 @@ export default function RecordPage() {
           away += logItem.value;
         }
       }
+      if (logItem?.name === "파울") {
+        foulCount[log.playerId] = (foulCount[log.playerId] || 0) + 1;
+      }
     });
     
+    setFoulCount(foulCount);
+
     setHomeScore(home);
     setAwayScore(away);
   }, [game, logItems]);
@@ -709,6 +729,7 @@ export default function RecordPage() {
                   onClick={() => handlePlayerSelect(player.id, 'home')}
                 >
                   {player.name}
+                  <PlayerBadge>{foulCount[player.id] || 0}</PlayerBadge>
                 </PlayerButton>
               ))}
             </PlayerList>
@@ -785,6 +806,7 @@ export default function RecordPage() {
                   onClick={() => handlePlayerSelect(player.id, 'away')}
                 >
                   {player.name}
+                  <PlayerBadge>{foulCount[player.id] || 0}</PlayerBadge>
                 </PlayerButton>
               ))}
             </PlayerList>
