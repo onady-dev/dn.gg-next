@@ -428,39 +428,53 @@ const GamesPage = () => {
     }
   };
 
-  const handleStartGame = async (gameId: number) => {
-    try {
-      await api.patch(`/game/${gameId}`, {
-        status: "IN_PROGRESS",
-      });
-      loadGames();
-    } catch (error) {
-      console.error("게임 시작에 실패했습니다:", error);
-    }
-  };
-
   const handleFinishGame = async (gameId: number) => {
     if (!confirm('정말로 게임을 종료하시겠습니까?')) {
       return;
     }
 
     try {
-      await api.patch(`/game/${gameId}`, {
+      const res = await api.patch(`/game/${gameId}`, {
         status: "FINISHED",
       });
-      
-      // 상태 직접 업데이트
-      setGames(prevGames => 
-        prevGames.map(game => 
-          game.id === gameId 
-            ? { ...game, status: "FINISHED" }
-            : game
-        )
-      );
+
+      if(res.status === 200) {
+        // 상태 직접 업데이트
+        setGames(prevGames => 
+          prevGames.map(game => 
+            game.id === gameId 
+              ? { ...game, status: "FINISHED" }
+              : game
+          )
+        );
+      }
     } catch (error) {
       console.error("게임 종료에 실패했습니다:", error);
     }
   };
+
+  const handleDeleteGame = async (gameId: number) => {
+    if (!confirm('정말로 게임을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const res = await api.delete(`/game/${gameId}?groupId=${selectedGroup}`);
+
+      if(res.status === 200) {
+        // 상태 직접 업데이트
+        setGames(prevGames => 
+          prevGames.filter(game => game.id !== gameId)
+        );
+      }
+    } catch (error) {
+      console.error("게임 삭제에 실패했습니다:", error);
+    }
+  };
+
+  useEffect(() => {
+    console.log(games);
+  }, [games]);
 
   const handleRestartGame = async (gameId: number) => {
     if (!confirm('이 게임을 다시 진행 중인 게임으로 변경하시겠습니까?')) {
@@ -543,12 +557,22 @@ const GamesPage = () => {
 
                   <GameActions style={{ marginTop: '1rem' }}>
                     <ActionButton 
-                      onClick={() => handleFinishGame(game.id)}
+                      onClick={(e) => { e.stopPropagation(); handleFinishGame(game.id); }}
                       style={{
-                        backgroundColor: '#ef4444',
+                        backgroundColor: '#facc15',
+                        color: '#374151',
                       }}
                     >
                       게임 종료
+                    </ActionButton>
+                    <ActionButton 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id); }}
+                      style={{
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                      }}
+                    >
+                      삭제
                     </ActionButton>
                   </GameActions>
                 </GameCard>
@@ -597,6 +621,15 @@ const GamesPage = () => {
                   <GameActions style={{ marginTop: '1rem' }}>
                     <ActionButton onClick={() => handleRestartGame(game.id)}>
                       다시 진행하기
+                    </ActionButton>
+                    <ActionButton 
+                      onClick={(e) => { e.stopPropagation(); handleDeleteGame(game.id); }}
+                      style={{
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                      }}
+                    >
+                      삭제
                     </ActionButton>
                   </GameActions>
                 </GameCard>
