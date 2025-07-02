@@ -505,9 +505,9 @@ const GamesPage = () => {
 
   if (loading) return <div>로딩 중...</div>;
   
-  if (!selectedGroup) {
-    return <NoGroupSelected />;
-  }
+  // if (!selectedGroup) {
+  //   return <NoGroupSelected />;
+  // }
 
   return (
     <Container>

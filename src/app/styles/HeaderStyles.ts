@@ -30,7 +30,7 @@ export const LogoNavContainer = styled.div`
   gap: 48px;
   
   @media (max-width: 768px) {
-    gap: 24px;
+    gap: 0;
   }
 `;
 
