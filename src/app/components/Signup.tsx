@@ -2,20 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/axios";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const Signup = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [groupName, setGroupName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const setUser = useAuthStore((state) => state.setUser);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert("Passwords do not match");
       return;
     }
-    // TODO: Add signup logic here
-    alert("Signup logic not implemented");
+    await api.post(`/user`, { email, password, phoneNumber, groupName })
+    .then((response) => {
+      alert("Signup success!");
+      setIsSignup(false);
+    })
+    .catch((error) => {
+      alert(error.response.data.message);
+    });
   };
 
   const handleLogin = () => {
@@ -48,6 +59,22 @@ const Signup = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) =>
             placeholder="Confirm Password"
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
+            required
+            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
+          />
+          <input
+            type="text"
+            placeholder="Phone Number"
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
+            required
+            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
+          />
+          <input
+            type="text"
+            placeholder="Group Name"
+            value={groupName}
+            onChange={e => setGroupName(e.target.value)}
             required
             style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
           />

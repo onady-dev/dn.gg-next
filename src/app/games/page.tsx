@@ -8,6 +8,7 @@ import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
 import NoGroupSelected from "../components/NoGroupSelected";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const Container = styled.div`
   padding: 1rem;
@@ -328,6 +329,7 @@ const GameStatusBadge = styled.span`
 
 const GamesPage = () => {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
   const { selectedGroup } = useGroupStore();
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>(() => {
@@ -392,6 +394,10 @@ const GamesPage = () => {
         homePlayers: selectedTeams.teamA.players,
         awayPlayers: selectedTeams.teamB.players,
         status: "IN_PROGRESS",
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
       });
 
       // 새로 생성된 게임 데이터
@@ -436,6 +442,10 @@ const GamesPage = () => {
     try {
       const res = await api.patch(`/game/${gameId}`, {
         status: "FINISHED",
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
       });
 
       if(res.status === 200) {
@@ -459,7 +469,11 @@ const GamesPage = () => {
     }
 
     try {
-      const res = await api.delete(`/game/${gameId}?groupId=${selectedGroup}`);
+      const res = await api.delete(`/game/${gameId}?groupId=${selectedGroup}`, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      });
 
       if(res.status === 200) {
         // 상태 직접 업데이트
@@ -484,6 +498,10 @@ const GamesPage = () => {
     try {
       await api.patch(`/game/${gameId}`, {
         status: "IN_PROGRESS",
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
       });
       
       // 상태 직접 업데이트

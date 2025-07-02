@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "@/lib/axios";
+import { useAuthStore } from "./useAuthStore";
 
 interface Group {
   id: number;
@@ -50,7 +51,12 @@ export const useGroupStore = create<GroupState>((set) => ({
   },
   createGroup: async (name: string) => {
     try {
-      const response = await api.post("/group", { name });
+      const user = useAuthStore((state) => state.user);
+      const response = await api.post("/group", { name }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      });
       const newGroup = response.data;
       set((state) => ({
         groups: [...state.groups, newGroup],

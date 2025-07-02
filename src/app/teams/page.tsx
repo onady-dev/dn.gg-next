@@ -8,9 +8,11 @@ import { useGroupStore } from "../stores/groupStore";
 import { api } from "@/lib/axios";
 import EmptyState from "../components/EmptyState";
 import NoGroupSelected from "../components/NoGroupSelected";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const TeamsPage = () => {
   const { selectedGroup } = useGroupStore();
+  const user = useAuthStore((state) => state.user);
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<TeamType[]>(() => {
@@ -146,6 +148,10 @@ const TeamsPage = () => {
         groupId: selectedGroup,
         name: newPlayerName,
         backnumber: newPlayerNumber,
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
       });
       setPlayers([...players, response.data]);
       setIsAddModalOpen(false);

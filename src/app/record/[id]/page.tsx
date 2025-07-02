@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { Game, LogItem, Log } from "@/types/game";
 import { Player } from "@/types/player";
 import { api } from "@/lib/axios";
+import { useAuthStore } from "@/app/stores/useAuthStore";
 
 const Container = styled.div`
   padding: 0.5rem;
@@ -420,6 +421,7 @@ const HistoryButton = styled.button`
 export default function RecordPage() {
   const router = useRouter();
   const params = useParams();
+  const user = useAuthStore((state) => state.user);
   const [game, setGame] = useState<Game | null>(null);
   const [logItems, setLogItems] = useState<LogItem[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<number | null>(null);
@@ -569,6 +571,10 @@ export default function RecordPage() {
         playerId: selectedPlayer,
         logitemId: logItemId,
         groupId: game.groupId
+      }, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
       });
       
       // 현재 게임 상태를 undo 스택에 저장
@@ -621,7 +627,11 @@ export default function RecordPage() {
       setRedoStack(prev => [...prev, game]);
       
       // 백엔드 API 호출하여 마지막 로그 삭제
-      await api.delete(`/log/game/${game.id}/undo`);
+      await api.delete(`/log/game/${game.id}/undo`, {
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      });
       
       // 게임 데이터 새로고침
       const response = await api.get<Game>(`/game/${game.id}`);

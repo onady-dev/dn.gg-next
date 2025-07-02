@@ -3,18 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../stores/useAuthStore";
+import api from "@/lib/axios";
 
 const Login = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const setUser = useAuthStore((state) => state.setUser);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Add login logic here (API 연동 필요)
-    // 임시로 로그인 성공 처리
-    setUser({ id: "1", username: email.split("@")[0], email, groupId: 1 });
-    alert("Login success! (dummy user info saved)");
+    await api.post(`/user/login`, { email, password })
+    .then((response) => {
+      setUser({ id: response.data.user.id, email: response.data.user.email, groupId: response.data.user.groupId, accessToken: response.data.accessToken });
+    })
+    .catch((error) => {
+      if(error.response.status === 401) {
+        alert("Invalid email or password");
+      }else if(error.response.status === 404) {
+        alert("User not found");
+      }else {
+        alert("Login failed");
+      }
+    });
   };
 
   const handleSignup = () => {
