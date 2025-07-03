@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <StyledComponentsRegistry>
           <GlobalStyles />
-          <Header onCreateGroupClick={() => setIsCreateGroupModalOpen(true)} />
+          <Header />
           <main>{children}</main>
           <CreateGroupModal 
             isOpen={isCreateGroupModalOpen} 
