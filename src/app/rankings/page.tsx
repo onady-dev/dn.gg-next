@@ -150,7 +150,7 @@ export default function Rankings() {
                     playerName: player.name,
                     teamId: player.teamId,
                     position: player.position,
-                    number: player.number,
+                    number: player.backnumber,
                     value: logItem.value,
                     totalCount: totalValue,
                     avgPerGame: avgValue,

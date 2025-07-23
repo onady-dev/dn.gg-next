@@ -29,6 +29,10 @@ const TeamsPage = () => {
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
   const [loading, setLoading] = useState(true);
+  const [longPressedPlayer, setLongPressedPlayer] = useState<Player | null>(null);
+  const [isPlayerActionModalOpen, setIsPlayerActionModalOpen] = useState(false);
+  const [editingPlayerName, setEditingPlayerName] = useState("");
+  const [editingPlayerNumber, setEditingPlayerNumber] = useState("");
 
   // 팀 데이터 저장 함수
   const saveTeamsToLocalStorage = (teamsData: TeamType[]) => {
@@ -106,6 +110,83 @@ const TeamsPage = () => {
       setSelectedPlayers(selectedPlayers.filter((p) => p.id !== player.id));
     } else {
       setSelectedPlayers([...selectedPlayers, player]);
+    }
+  };
+
+  const handlePlayerLongPress = (player: Player) => {
+    setLongPressedPlayer(player);
+    setEditingPlayerName(player.name);
+    setEditingPlayerNumber(player.backnumber?.toString() || "");
+    setIsPlayerActionModalOpen(true);
+  };
+
+  const handleSavePlayer = async () => {
+    if (!longPressedPlayer || !user?.accessToken) return;
+
+    try {
+      const response = await api.put(`/player/${longPressedPlayer.id}`, {
+        groupId: longPressedPlayer.groupId,
+        name: editingPlayerName,
+        backnumber: editingPlayerNumber ? editingPlayerNumber : null,
+      }, {
+        headers: {
+          Authorization: `Bearer ${user.accessToken}`,
+        },
+      });
+      console.log(response.data);
+      const updatedPlayer = response.data;
+
+      // 선수 목록 업데이트
+      setPlayers(players.map(p => 
+        p.id === longPressedPlayer.id ? updatedPlayer : p
+      ));
+
+      // 팀에서도 해당 선수 정보 업데이트
+      const updatedTeams = teams.map(team => ({
+        ...team,
+        players: team.players.map(p => 
+          p.id === longPressedPlayer.id ? updatedPlayer : p
+        ),
+      }));
+      setTeams(updatedTeams);
+      saveTeamsToLocalStorage(updatedTeams);
+
+      setIsPlayerActionModalOpen(false);
+      setLongPressedPlayer(null);
+    } catch (error) {
+      console.error("선수 정보 수정에 실패했습니다:", error);
+      alert("선수 정보 수정에 실패했습니다.");
+    }
+  };
+
+  const handleDeletePlayer = async () => {
+    if (!longPressedPlayer || !user?.accessToken) return;
+
+    if (window.confirm(`${longPressedPlayer.name} 선수를 삭제하시겠습니까?`)) {
+      try {
+        await api.delete(`/player/${longPressedPlayer.id}`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        });
+        
+        // 선수 목록에서 제거
+        setPlayers(players.filter((p) => p.id !== longPressedPlayer.id));
+        
+        // 팀에서도 해당 선수 제거
+        const updatedTeams = teams.map((team) => ({
+          ...team,
+          players: team.players.filter((p) => p.id !== longPressedPlayer.id),
+        }));
+        setTeams(updatedTeams);
+        saveTeamsToLocalStorage(updatedTeams);
+        
+        setIsPlayerActionModalOpen(false);
+        setLongPressedPlayer(null);
+      } catch (error) {
+        console.error("선수 삭제에 실패했습니다:", error);
+        alert("선수 삭제에 실패했습니다.");
+      }
     }
   };
 
@@ -209,7 +290,7 @@ const TeamsPage = () => {
           <SectionTitle>선수 목록</SectionTitle>
           <PlayerList>
             {players.map((player) => (
-              <PlayerCard key={player.id} player={player} isSelected={selectedPlayers.some((p) => p.id === player.id)} onClick={() => handlePlayerClick(player)} />
+              <PlayerCard key={player.id} player={player} isSelected={selectedPlayers.some((p) => p.id === player.id)} onClick={() => handlePlayerClick(player)} onLongPress={() => handlePlayerLongPress(player)} />
             ))}
           </PlayerList>
         </Section>
@@ -224,7 +305,12 @@ const TeamsPage = () => {
                 </TeamHeader>
                 <TeamPlayerList>
                   {team.players.map((player) => (
-                    <PlayerCard key={player.id} player={player} onClick={() => handleRemoveFromTeam(team.id, player)} />
+                    <PlayerCard 
+                      key={player.id} 
+                      player={player} 
+                      onClick={() => handleRemoveFromTeam(team.id, player)} 
+                      onLongPress={() => handlePlayerLongPress(player)} 
+                    />
                   ))}
                 </TeamPlayerList>
               </Team>
@@ -255,6 +341,35 @@ const TeamsPage = () => {
             <ModalButtons>
               <ModalButton onClick={handleAddTeam}>추가</ModalButton>
               <ModalButton onClick={() => setIsAddTeamModalOpen(false)}>취소</ModalButton>
+            </ModalButtons>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {isPlayerActionModalOpen && longPressedPlayer && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>선수 정보</ModalTitle>
+            <div>
+              <label><strong>이름:</strong></label>
+              <Input 
+                type="text" 
+                value={editingPlayerName} 
+                onChange={(e) => setEditingPlayerName(e.target.value)} 
+              />
+            </div>
+            <div>
+              <label><strong>등번호:</strong></label>
+              <Input 
+                type="number" 
+                value={editingPlayerNumber} 
+                onChange={(e) => setEditingPlayerNumber(e.target.value)} 
+              />
+            </div>
+            <ModalButtons>
+              <ModalButton onClick={handleSavePlayer}>저장</ModalButton>
+              <ModalButton onClick={handleDeletePlayer}>삭제</ModalButton>
+              <ModalButton onClick={() => setIsPlayerActionModalOpen(false)}>취소</ModalButton>
             </ModalButtons>
           </ModalContent>
         </Modal>

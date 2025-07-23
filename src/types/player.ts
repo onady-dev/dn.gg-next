@@ -1,10 +1,10 @@
 export interface Player {
   id: number;
   name: string;
-  number: number;  // 등번호
+  backnumber: string;  // 등번호
   groupId: number;
-  teamId: string;
-  position: string;
+  teamId?: string;
+  position?: string;
   image?: string;
 }
 
@@ -32,5 +32,5 @@ export interface InGamePlayer {
   id: number;
   name: string;
   position: string;
-  number: number;
+  backnumber: string;
 }

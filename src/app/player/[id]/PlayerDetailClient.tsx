@@ -70,7 +70,7 @@ export default function PlayerDetailClient({ player, gameRecords, allLogItemName
         <S.PlayerHeader>
           <S.PlayerName>{player.name}</S.PlayerName>
           <S.PlayerBadge>
-            {player.position} #{player.number}
+            {player.position} #{player.backnumber}
           </S.PlayerBadge>
         </S.PlayerHeader>
       </S.PlayerInfoCard>

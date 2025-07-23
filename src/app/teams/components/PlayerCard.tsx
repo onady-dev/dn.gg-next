@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { Player } from '@/types/player';
 
@@ -8,12 +8,58 @@ interface PlayerCardProps {
   player: Player;
   isSelected?: boolean;
   onClick?: () => void;
+  onLongPress?: () => void;
 }
 
-const PlayerCard = ({ player, isSelected, onClick }: PlayerCardProps) => {
+const PlayerCard = ({ player, isSelected, onClick, onLongPress }: PlayerCardProps) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressRef = useRef(false);
+
+  const handleMouseDown = useCallback(() => {
+    isLongPressRef.current = false;
+    timeoutRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      onLongPress?.();
+    }, 500); // 500ms 길게 누르기
+  }, [onLongPress]);
+
+  const handleMouseUp = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    
+    // 길게 누르기가 아니었다면 일반 클릭 이벤트 실행
+    if (!isLongPressRef.current) {
+      onClick?.();
+    }
+  }, [onClick]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, []);
+
+  const handleTouchStart = useCallback(() => {
+    handleMouseDown();
+  }, [handleMouseDown]);
+
+  const handleTouchEnd = useCallback(() => {
+    handleMouseUp();
+  }, [handleMouseUp]);
+
   return (
-    <Container onClick={onClick} isSelected={isSelected}>
-      <Number>{player.number}</Number>
+    <Container 
+      isSelected={isSelected}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <Number>{player.backnumber}</Number>
       <Name>{player.name}</Name>
     </Container>
   );
