@@ -133,7 +133,6 @@ const TeamsPage = () => {
           Authorization: `Bearer ${user.accessToken}`,
         },
       });
-      console.log(response.data);
       const updatedPlayer = response.data;
 
       // 선수 목록 업데이트

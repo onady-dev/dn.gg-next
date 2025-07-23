@@ -384,13 +384,17 @@ const GamesPage = () => {
   };
 
   const handleCreateGame = async () => {
-    if (!selectedGroup || !gameName || !selectedTeams.teamA || !selectedTeams.teamB) return;
+    if (!selectedGroup || !selectedTeams.teamA || !selectedTeams.teamB) {
+      alert("팀을 선택해주세요.");
+      return;
+    }
 
     try {
       // 게임 생성 API 호출
       const response = await api.post("/game", {
         groupId: selectedGroup,
-        name: gameName,
+        homeTeamName: selectedTeams.teamA.name,
+        awayTeamName: selectedTeams.teamB.name,
         homePlayers: selectedTeams.teamA.players,
         awayPlayers: selectedTeams.teamB.players,
         status: "IN_PROGRESS",
@@ -404,7 +408,8 @@ const GamesPage = () => {
       const newGame = {
         id: response.data.gameId,
         groupId: selectedGroup,
-        name: gameName,
+        homeTeamName: selectedTeams.teamA.name,
+        awayTeamName: selectedTeams.teamB.name,
         date: new Date(),
         status: "IN_PROGRESS",
         homePlayers: selectedTeams.teamA.players.map(player => ({
@@ -547,7 +552,7 @@ const GamesPage = () => {
                 >
                   <GameInfo>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <GameName>{game.name}</GameName>
+                      <GameName>{`${game.homeTeamName} vs ${game.awayTeamName}`}</GameName>
                       <GameStatusBadge>진행중</GameStatusBadge>
                     </div>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
@@ -555,7 +560,7 @@ const GamesPage = () => {
                   
                   <TeamsContainer>
                     <TeamSection>
-                      <TeamLabel>홈팀</TeamLabel>
+                      <TeamLabel>{`홈팀 (${game.homeTeamName})`}</TeamLabel>
                       <PlayerList>
                         {game.homePlayers.map((player) => (
                           <PlayerTag key={player.id}>{player.name}</PlayerTag>
@@ -564,7 +569,7 @@ const GamesPage = () => {
                     </TeamSection>
                     
                     <TeamSection>
-                      <TeamLabel>어웨이팀</TeamLabel>
+                      <TeamLabel>{`어웨이팀 (${game.awayTeamName})`}</TeamLabel>
                       <PlayerList>
                         {game.awayPlayers.map((player) => (
                           <PlayerTag key={player.id}>{player.name}</PlayerTag>
@@ -612,13 +617,13 @@ const GamesPage = () => {
               .map((game) => (
                 <GameCard key={game.id}>
                   <GameInfo>
-                    <GameName>{game.name}</GameName>
+                    <GameName>{`${game.homeTeamName} vs ${game.awayTeamName}`}</GameName>
                     <GameDate>{new Date(game.date).toLocaleDateString()}</GameDate>
                   </GameInfo>
 
                   <TeamsContainer>
                     <TeamSection>
-                      <TeamLabel>홈팀</TeamLabel>
+                      <TeamLabel>{`홈팀 (${game.homeTeamName})`}</TeamLabel>
                       <PlayerList>
                         {game.homePlayers.map((player) => (
                           <PlayerTag key={player.id}>{player.name}</PlayerTag>
@@ -627,7 +632,7 @@ const GamesPage = () => {
                     </TeamSection>
                     
                     <TeamSection>
-                      <TeamLabel>어웨이팀</TeamLabel>
+                      <TeamLabel>{`어웨이팀 (${game.awayTeamName})`}</TeamLabel>
                       <PlayerList>
                         {game.awayPlayers.map((player) => (
                           <PlayerTag key={player.id}>{player.name}</PlayerTag>
@@ -667,7 +672,7 @@ const GamesPage = () => {
         <Modal>
           <ModalContent>
             <ModalTitle>새 게임 생성</ModalTitle>
-            <Input type="text" placeholder="게임 이름" value={gameName} onChange={(e) => setGameName(e.target.value)} />
+            <Input type="text" placeholder="게임 이름" value={`${selectedTeams.teamA?.name || ""} vs ${selectedTeams.teamB?.name || ""}`} disabled/>
             <Select
               value={selectedTeams.teamA?.id || ""}
               onChange={(e) => {

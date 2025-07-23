@@ -103,6 +103,37 @@ const ScoreDisplay = styled.div`
   }
 `;
 
+const SwapButton = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover {
+    background-color: #d1d5db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  }
+  
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+`;
+
 const TeamsContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 0.75fr 1fr;
@@ -433,6 +464,7 @@ export default function RecordPage() {
   const [undoStack, setUndoStack] = useState<Game[]>([]);
   const [redoStack, setRedoStack] = useState<Game[]>([]);
   const [foulCount, setFoulCount] = useState<{[playerId: number]: number}>({});
+  const [isTeamPositionSwapped, setIsTeamPositionSwapped] = useState(false);
 
   const fetchGameData = async () => {
     try {
@@ -703,40 +735,60 @@ export default function RecordPage() {
     }
   };
 
+  // 팀 스왑 함수
+  const handleSwapTeams = () => {
+    setIsTeamPositionSwapped(!isTeamPositionSwapped);
+  };
+
   if (loading) return <div>로딩 중...</div>;
   if (!game) return <div>게임을 찾을 수 없습니다.</div>;
+
+  // 현재 위치에 따른 팀 데이터
+  const leftTeam = isTeamPositionSwapped ? 
+    { name: game.awayTeamName, players: game.awayPlayers, type: 'away' as const, score: awayScore } :
+    { name: game.homeTeamName, players: game.homePlayers, type: 'home' as const, score: homeScore };
+    
+  const rightTeam = isTeamPositionSwapped ? 
+    { name: game.homeTeamName, players: game.homePlayers, type: 'home' as const, score: homeScore } :
+    { name: game.awayTeamName, players: game.awayPlayers, type: 'away' as const, score: awayScore };
 
   return (
     <Container className="full-height">
       <BackButton onClick={() => router.back()}>뒤로 가기</BackButton>
       <GameInfoHeader>
-        <GameName>{game.name}</GameName>
+        <GameName>{`${game.homeTeamName} vs ${game.awayTeamName}`}</GameName>
         <ScoreDisplay>
-          <span className="score">{homeScore}</span>
+          <span className="score">{leftTeam.score}</span>
           <span className="vs">vs</span>
-          <span className="score">{awayScore}</span>
+          <span className="score">{rightTeam.score}</span>
         </ScoreDisplay>
+        <SwapButton onClick={handleSwapTeams}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+          </svg>
+          팀 위치 바꾸기
+        </SwapButton>
       </GameInfoHeader>
       
       
       
       <TeamsContainer>
-        {/* 홈팀 영역 */}
+        {/* 왼쪽 팀 영역 */}
         <TeamSection>
           <TeamHeader className="team-header">
-            {selectedTeam !== 'home' ? (
-              <h3>홈팀</h3>
+            {selectedTeam !== leftTeam.type ? (
+              <h3>{`${leftTeam.type === 'home' ? '홈팀' : '어웨이팀'} (${leftTeam.name})`}</h3>
             ) : (
               <CancelButton onClick={handleCancel}>취소</CancelButton>
             )}
           </TeamHeader>
-          {selectedTeam !== 'home' ? (
+          {selectedTeam !== leftTeam.type ? (
             <PlayerList className="player-list">
-              {game.homePlayers.map((player) => (
+              {leftTeam.players.map((player) => (
                 <PlayerButton
                   key={player.id}
                   isSelected={selectedPlayer === player.id}
-                  onClick={() => handlePlayerSelect(player.id, 'home')}
+                  onClick={() => handlePlayerSelect(player.id, leftTeam.type)}
                 >
                   {player.name}
                   <PlayerBadge>{foulCount[player.id] || 0}</PlayerBadge>
@@ -798,22 +850,22 @@ export default function RecordPage() {
             )}
         </LogHistoryContainer>
 
-        {/* 어웨이팀 영역 */}
+        {/* 오른쪽 팀 영역 */}
         <TeamSection>
           <TeamHeader className="team-header">
-            {selectedTeam !== 'away' ? (
-              <h3>어웨이팀</h3>
+            {selectedTeam !== rightTeam.type ? (
+              <h3>{`${rightTeam.type === 'home' ? '홈팀' : '어웨이팀'} (${rightTeam.name})`}</h3>
             ) : (
               <CancelButton onClick={handleCancel}>취소</CancelButton>
             )}
           </TeamHeader>
-          {selectedTeam !== 'away' ? (
+          {selectedTeam !== rightTeam.type ? (
             <PlayerList className="player-list">
-              {game.awayPlayers.map((player) => (
+              {rightTeam.players.map((player) => (
                 <PlayerButton
                   key={player.id}
                   isSelected={selectedPlayer === player.id}
-                  onClick={() => handlePlayerSelect(player.id, 'away')}
+                  onClick={() => handlePlayerSelect(player.id, rightTeam.type)}
                 >
                   {player.name}
                   <PlayerBadge>{foulCount[player.id] || 0}</PlayerBadge>

@@ -2,7 +2,8 @@ import { Player } from "./player";
 
 export interface Game {
   id: number;
-  name: string;
+  homeTeamName: string;
+  awayTeamName: string;
   date: string;
   groupId: number;
   status: 'READY' | 'IN_PROGRESS' | 'FINISHED';
