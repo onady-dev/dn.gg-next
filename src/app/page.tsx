@@ -6,7 +6,7 @@ import { Game } from "@/types/game";
 import { api } from "@/lib/axios";
 import { useGroupStore } from "./stores/groupStore";
 import * as S from "./styles/HomeStyles";
-import { InGamePlayer } from "@/types/player";
+import { InGamePlayer, Player } from "@/types/player";
 import styled from "styled-components";
 
 const PlayerRecordContainer = styled.div`
@@ -121,7 +121,7 @@ export default function Home() {
     return game.logs.filter((log) => log.playerId === playerId).reduce((sum, log) => sum + log.logitem.value, 0);
   };
 
-  const renderPlayerLogs = (game: Game, player: InGamePlayer) => {
+  const renderPlayerLogs = (game: Game, player: Player) => {
     const logSummary = getPlayerLogSummary(game, player.id);
     if (logSummary.length === 0) return null;
 
@@ -140,7 +140,7 @@ export default function Home() {
     );
   };
 
-  const handlePlayerClick = (player: InGamePlayer) => {
+  const handlePlayerClick = (player: Player) => {
     router.push(`/player/${player.id}`);
   };
 
@@ -308,7 +308,7 @@ export default function Home() {
                 <S.GameHeaderContent>
                   <S.GameInfo>
                     <S.TitleContainer>
-                      <S.GameTitle>{game.name}{game.status === 'IN_PROGRESS' && ' (진행중)'}</S.GameTitle>
+                      <S.GameTitle>{`${game.homeTeamName} vs ${game.awayTeamName}`}{game.status === 'IN_PROGRESS' && ' (진행중)'}</S.GameTitle>
                       <S.GameDate>
                         {new Date(game.date).toLocaleDateString("ko-KR", {
                           year: "numeric",
