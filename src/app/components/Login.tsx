@@ -37,8 +37,8 @@ const Login = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) => 
         <h2 style={{ marginBottom: 24, textAlign: "center" }}>Login</h2>
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <input
-            type="email"
-            placeholder="Email"
+            type="text"
+            placeholder="Id"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required

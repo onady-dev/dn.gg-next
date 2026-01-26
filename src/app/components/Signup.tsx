@@ -39,8 +39,8 @@ const Signup = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) =>
         <h2 style={{ marginBottom: 24, textAlign: "center" }}>Sign Up</h2>
         <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <input
-            type="email"
-            placeholder="Email"
+            type="text"
+            placeholder="Id"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
@@ -64,20 +64,20 @@ const Signup = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) =>
           />
           <input
             type="text"
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChange={e => setPhoneNumber(e.target.value)}
-            required
-            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
-          />
-          <input
-            type="text"
             placeholder="Group Name"
             value={groupName}
             onChange={e => setGroupName(e.target.value)}
             required
             style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
           />
+          <input
+            type="text"
+            placeholder="Phone Number"
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
+            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
+          />
+          
           <button type="submit" style={{ padding: 10, borderRadius: 6, background: "#0070f3", color: "#fff", border: "none", fontWeight: 600 }}>
             Sign Up
           </button>

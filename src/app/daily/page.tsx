@@ -88,7 +88,11 @@ const DailyPage = () => {
   // 선택한 날짜의 플레이어 기록 가져오기
   useEffect(() => {
     const fetchDailyRecords = async () => {
-      if (!selectedGroup || !selectedDate) return;
+      if (!selectedGroup) return;
+      if (!selectedDate) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -97,10 +101,8 @@ const DailyPage = () => {
         // 해당 날짜의 게임 조회
         const res = await api.get(`/log/daily?date=${selectedDate}`);
         const players = res.data;
-        
         if (players.length === 0) {
           setPlayerRecords([]);
-          setLoading(false);
           return;
         }
         setPlayerRecords(players.sort((a: PlayerRecord, b: PlayerRecord) => b.totalScore - a.totalScore));
@@ -135,6 +137,8 @@ const DailyPage = () => {
     <Container>
       <Header>
         <Title>일일 기록</Title>
+        {
+          selectedDate ?
         <DateSelectContainer>
           <DateSelect
             value={selectedDate}
@@ -147,11 +151,13 @@ const DailyPage = () => {
             ))}
           </DateSelect>
         </DateSelectContainer>
+        : null
+        }
       </Header>
 
-      {playerRecords.length === 0 ? (
+      {(!selectedDate || playerRecords.length === 0) ? (
         <EmptyContainer>
-          <EmptyText>선택한 날짜에 기록된 게임이 없습니다.</EmptyText>
+          <EmptyText>기록된 게임이 없습니다.</EmptyText>
         </EmptyContainer>
       ) : (
         <TableContainer>
