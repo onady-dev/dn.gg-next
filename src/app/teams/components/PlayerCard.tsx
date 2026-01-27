@@ -42,11 +42,13 @@ const PlayerCard = ({ player, isSelected, onClick, onLongPress }: PlayerCardProp
     }
   }, []);
 
-  const handleTouchStart = useCallback(() => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
     handleMouseDown();
   }, [handleMouseDown]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
     handleMouseUp();
   }, [handleMouseUp]);
 

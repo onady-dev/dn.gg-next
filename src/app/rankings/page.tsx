@@ -123,72 +123,76 @@ export default function Rankings() {
         }
         const logItems = (logItemsResponse.data as LogItemData[]).filter((item) => !item.name.includes("자유투"));
 
-        // 2. 각 로그 아이템별 로그 데이터 가져오기
-        const rankingsData = await Promise.all(
-          logItems.map(async (logItem) => {
-            // 로그 데이터 가져오기
-            const logsResponse = await api.get(`/log/logitem?groupId=${selectedGroup}&logitemId=${logItem.id}`);
-            const logs = logsResponse.data as LogItem[];
+        // 2. 모든 로그 데이터를 한 번에 가져오기
+        const allLogsResponses = await Promise.all(
+          logItems.map((logItem) => api.get(`/log/logitem?groupId=${selectedGroup}&logitemId=${logItem.id}`))
+        );
+        const allLogsByItem = allLogsResponses.map((res) => res.data as LogItem[]);
+        const flattenedLogs = allLogsByItem.flat();
 
-            // 플레이어별 통계 계산
-            const playerStats = calculatePlayerStats(logs);
+        // 3. 고유한 플레이어 ID 추출
+        const uniquePlayerIds = [...new Set(flattenedLogs.map((log) => log.playerId))];
 
-            // 플레이어 정보 가져오기
-            const players = await Promise.all(
-              Array.from(playerStats.entries()).map(async ([playerId, stats]) => {
-                try {
-                  const playerResponse = await api.get(`/player/${playerId}`);
-                  const player = playerResponse.data;
-                  const totalGamesPlayedResponse = await api.get(`/player/total-games-played/${playerId}`);
-                  const totalGamesPlayed = totalGamesPlayedResponse.data;
-                  const totalValue = stats.totalCount;
-                  // value가 0인 경우 횟수만 사용, 그 외에는 value를 곱함
-                  const avgValue = totalGamesPlayed > 0 ? totalValue / totalGamesPlayed : 0;
-
-                  return {
-                    playerId,
-                    playerName: player.name,
-                    teamId: player.teamId,
-                    position: player.position,
-                    number: player.backnumber,
-                    value: logItem.value,
-                    totalCount: totalValue,
-                    avgPerGame: avgValue,
-                    gamesPlayed: totalGamesPlayed,
-                  } as PlayerRanking;
-                } catch (err) {
-                  console.error(`플레이어 정보를 불러오는데 실패했습니다 (ID: ${playerId}):`, err);
-                  return null;
-                }
-              })
-            );
-
-            // 정렬
-            const validPlayers = players.filter((p): p is PlayerRanking => p !== null);
-            const sortedPlayers = [...validPlayers].sort((a, b) => {
-              if (logItem.value < 0) {
-                return selectedTab === "total" ? a.totalCount! - b.totalCount! : a.avgPerGame! - b.avgPerGame!;
-              }
-              return selectedTab === "total" ? b.totalCount! - a.totalCount! : b.avgPerGame! - a.avgPerGame!;
-            });
-
-            return {
-              id: logItem.id,
-              name: logItem.name,
-              value: logItem.value,
-              players: sortedPlayers,
-            };
+        // 4. 플레이어 정보를 배치로 가져오기 (2개 API를 1번에)
+        const playersData = await Promise.all(
+          uniquePlayerIds.map(async (playerId) => {
+            try {
+              const [playerResponse, gamesPlayedResponse] = await Promise.all([
+                api.get(`/player/${playerId}`),
+                api.get(`/player/total-games-played/${playerId}`),
+              ]);
+              return {
+                playerId,
+                info: playerResponse.data,
+                gamesPlayed: gamesPlayedResponse.data,
+              };
+            } catch (err) {
+              console.error(`플레이어 정보를 불러오는데 실패했습니다 (ID: ${playerId}):`, err);
+              return null;
+            }
           })
         );
 
-        // 득점 랭킹 추가
-        const allLogs = await Promise.all(
-          logItems.map(async (logItem) => {
-            const logsResponse = await api.get(`/log/logitem?groupId=${selectedGroup}&logitemId=${logItem.id}`);
-            return logsResponse.data as LogItem[];
-          })
+        const playersMap = new Map(
+          playersData.filter((p) => p !== null).map((p) => [p!.playerId, p!])
         );
-        const flattenedLogs = allLogs.flat();
+
+        // 5. 각 로그 아이템별 랭킹 계산
+        const rankingsData = logItems.map((logItem, index) => {
+          const logs = allLogsByItem[index];
+          const playerStats = calculatePlayerStats(logs);
+
+          const players = Array.from(playerStats.entries())
+            .map(([playerId, stats]) => {
+              const playerData = playersMap.get(playerId);
+              if (!playerData) return null;
+
+              const totalValue = stats.totalCount;
+              const avgValue = playerData.gamesPlayed > 0 ? totalValue / playerData.gamesPlayed : 0;
+
+              return {
+                playerId,
+                playerName: playerData.info.name,
+                teamId: playerData.info.teamId,
+                position: playerData.info.position,
+                number: playerData.info.backnumber,
+                value: logItem.value,
+                totalCount: totalValue,
+                avgPerGame: avgValue,
+                gamesPlayed: playerData.gamesPlayed,
+              } as PlayerRanking;
+            })
+            .filter((p): p is PlayerRanking => p !== null);
+
+          return {
+            id: logItem.id,
+            name: logItem.name,
+            value: logItem.value,
+            players,
+          };
+        });
+
+        // 6. 득점 랭킹 계산 (이미 가져온 데이터 재사용)
         const playerStats = calculatePlayerStats(flattenedLogs);
         const allPlayers = rankingsData.flatMap((r) => r.players);
 
@@ -201,23 +205,19 @@ export default function Rankings() {
               const player = allPlayers.find((p) => p.playerId === playerId);
               if (!player) return null;
 
-              const extendedPlayer: PlayerRanking = {
+              return {
                 ...player,
                 totalCount: stats.totalScore,
                 avgPerGame: stats.games.size > 0 ? stats.totalScore / stats.games.size : 0,
                 totalScore: stats.totalScore,
                 avgScore: stats.games.size > 0 ? stats.totalScore / stats.games.size : 0,
                 gamesPlayed: stats.games.size,
-              };
-
-              return extendedPlayer;
+              } as PlayerRanking;
             })
-            .filter((p): p is PlayerRanking => p !== null)
-            .sort((a, b) => (selectedTab === "total" ? b.totalScore! - a.totalScore! : b.avgScore! - a.avgScore!)),
+            .filter((p): p is PlayerRanking => p !== null),
         };
 
-        // 득점 데이터가 있을 때만 추가
-        const hasScoreData = scoreRanking.players.length > 0 && scoreRanking.players.some(p => p.totalScore! > 0);
+        const hasScoreData = scoreRanking.players.length > 0 && scoreRanking.players.some((p) => p.totalScore! > 0);
         setRankings(hasScoreData ? [scoreRanking, ...rankingsData] : rankingsData);
       } catch (err) {
         console.error("랭킹 데이터를 불러오는데 실패했습니다:", err);
@@ -228,7 +228,7 @@ export default function Rankings() {
     };
 
     fetchRankings();
-  }, [selectedGroup, selectedTab]);
+  }, [selectedGroup]);
 
   const handleLogItemClick = (logItemId: number) => {
     setSelectedLogItem(selectedLogItem === logItemId ? null : logItemId);
@@ -261,14 +261,18 @@ export default function Rankings() {
     return <EmptyState message="등록된 랭킹 데이터가 없습니다." />;
   }
 
-  const filteredRankings = rankings
-    .filter((ranking): ranking is LogItemRanking => ranking !== null)
-    .sort((a, b) => {
-      if (selectedTab === "average") {
-        return (b.avgPerGame ?? 0) - (a.avgPerGame ?? 0);
+  const filteredRankings = rankings.map((ranking) => ({
+    ...ranking,
+    players: [...ranking.players].sort((a, b) => {
+      if (ranking.value < 0) {
+        return selectedTab === "total" ? a.totalCount! - b.totalCount! : a.avgPerGame! - b.avgPerGame!;
       }
-      return (b.totalCount ?? 0) - (a.totalCount ?? 0);
-    });
+      if (ranking.name === "득점") {
+        return selectedTab === "total" ? b.totalScore! - a.totalScore! : b.avgScore! - a.avgScore!;
+      }
+      return selectedTab === "total" ? b.totalCount! - a.totalCount! : b.avgPerGame! - a.avgPerGame!;
+    }),
+  }));
 
   return (
     <S.Container>

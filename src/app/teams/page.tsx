@@ -77,10 +77,10 @@ const TeamsPage = () => {
         team.players.map((player: Player) => player.id)
       );
 
-      // 팀에 포함되지 않은 선수들만 필터링
-      const availablePlayers = allPlayers.filter(
-        (player: Player) => !teamPlayerIds.includes(player.id)
-      );
+      // 팀에 포함되지 않은 선수들만 필터링하고 이름순 정렬
+      const availablePlayers = allPlayers
+        .filter((player: Player) => !teamPlayerIds.includes(player.id))
+        .sort((a: Player, b: Player) => a.name.localeCompare(b.name));
 
       setPlayers(availablePlayers);
     } catch (error) {
@@ -138,7 +138,7 @@ const TeamsPage = () => {
       // 선수 목록 업데이트
       setPlayers(players.map(p => 
         p.id === longPressedPlayer.id ? updatedPlayer : p
-      ));
+      ).sort((a, b) => a.name.localeCompare(b.name)));
 
       // 팀에서도 해당 선수 정보 업데이트
       const updatedTeams = teams.map(team => ({
@@ -201,7 +201,7 @@ const TeamsPage = () => {
     });
     setTeams(updatedTeams);
     saveTeamsToLocalStorage(updatedTeams);
-    setPlayers(players.filter((p) => !selectedPlayers.find((sp) => sp.id === p.id)));
+    setPlayers(players.filter((p) => !selectedPlayers.find((sp) => sp.id === p.id)).sort((a, b) => a.name.localeCompare(b.name)));
     setSelectedPlayers([]);
   };
 
@@ -217,7 +217,7 @@ const TeamsPage = () => {
     });
     setTeams(updatedTeams);
     saveTeamsToLocalStorage(updatedTeams);
-    setPlayers([...players, player]);
+    setPlayers([...players, player].sort((a, b) => a.name.localeCompare(b.name)));
   };
 
   const handleAddPlayer = async () => {
@@ -233,7 +233,7 @@ const TeamsPage = () => {
           Authorization: `Bearer ${user?.accessToken}`,
         },
       });
-      setPlayers([...players, response.data]);
+      setPlayers([...players, response.data].sort((a, b) => a.name.localeCompare(b.name)));
       setIsAddModalOpen(false);
       setNewPlayerName("");
       setNewPlayerNumber("");
@@ -260,7 +260,7 @@ const TeamsPage = () => {
         localStorage.removeItem(`teams_group_${selectedGroup}`);
         try {
           const response = await api.get(`/player?groupId=${selectedGroup}`);
-          setPlayers(response.data);
+          setPlayers(response.data.sort((a: Player, b: Player) => a.name.localeCompare(b.name)));
         } catch (error) {
           console.error("선수 목록을 불러오는데 실패했습니다:", error);
         }
