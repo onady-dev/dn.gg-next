@@ -449,6 +449,49 @@ const HistoryButton = styled.button`
   }
 `;
 
+const LandscapePrompt = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  color: white;
+  text-align: center;
+  padding: 2rem;
+
+  @media (orientation: landscape) {
+    display: none;
+  }
+`;
+
+const RotateIcon = styled.div`
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: rotate 2s ease-in-out infinite;
+
+  @keyframes rotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+`;
+
+const PromptText = styled.div`
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+`;
+
+const PromptSubText = styled.div`
+  font-size: 0.9rem;
+  opacity: 0.8;
+`;
+
 export default function RecordPage() {
   const router = useRouter();
   const params = useParams();
@@ -753,7 +796,13 @@ export default function RecordPage() {
     { name: game.awayTeamName, players: game.awayPlayers, type: 'away' as const, score: awayScore };
 
   return (
-    <Container className="full-height">
+    <>
+      <LandscapePrompt>
+        <RotateIcon>📱</RotateIcon>
+        <PromptText>가로 모드로 회전해주세요</PromptText>
+        <PromptSubText>더 나은 경기 기록 경험을 위해</PromptSubText>
+      </LandscapePrompt>
+      <Container className="full-height">
       <BackButton onClick={() => router.back()}>뒤로 가기</BackButton>
       <GameInfoHeader>
         <GameName>{`${game.homeTeamName} vs ${game.awayTeamName}`}</GameName>
@@ -890,5 +939,6 @@ export default function RecordPage() {
         </TeamSection>
       </TeamsContainer>
     </Container>
+    </>
   );
 } 
