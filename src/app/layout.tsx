@@ -7,6 +7,7 @@ import StyledComponentsRegistry from "./registry";
 import Header from "./components/Header";
 import GlobalStyles from "./styles/GlobalStyles";
 import CreateGroupModal from "./components/CreateGroupModal";
+import InstallPrompt from "./components/InstallPrompt";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             isOpen={isCreateGroupModalOpen} 
             onClose={() => setIsCreateGroupModalOpen(false)} 
           />
+          <InstallPrompt />
         </StyledComponentsRegistry>
       </body>
     </html>

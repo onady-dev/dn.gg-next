@@ -42,7 +42,7 @@ const Login = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) => 
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
+            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd", fontSize: 16 }}
           />
           <input
             type="password"
@@ -50,7 +50,7 @@ const Login = ({ setIsSignup }: { setIsSignup: (isLogin: boolean) => void }) => 
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd" }}
+            style={{ padding: 10, borderRadius: 6, border: "1px solid #ddd", fontSize: 16 }}
           />
           <button type="submit" style={{ padding: 10, borderRadius: 6, background: "#0070f3", color: "#fff", border: "none", fontWeight: 600 }}>
             Login
