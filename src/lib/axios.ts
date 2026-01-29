@@ -1,3 +1,4 @@
+import { useAuthStore } from "@/app/stores/useAuthStore";
 import axios from "axios";
 
 export const api = axios.create({
@@ -36,6 +37,8 @@ api.interceptors.response.use(
     if (isBrowser() && error.response?.status === 401) {
       // 인증 에러 처리
       localStorage.removeItem("token");
+      useAuthStore.getState().logout();
+      window.location.href = "/settings";
     }
     return Promise.reject(error);
   }
