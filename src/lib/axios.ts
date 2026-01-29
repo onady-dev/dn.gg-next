@@ -37,6 +37,7 @@ api.interceptors.response.use(
     if (isBrowser() && error.response?.status === 401) {
       // 인증 에러 처리
       localStorage.removeItem("token");
+      alert("토큰이 만료되어 로그아웃되었습니다.");
       useAuthStore.getState().logout();
       window.location.href = "/settings";
     }
